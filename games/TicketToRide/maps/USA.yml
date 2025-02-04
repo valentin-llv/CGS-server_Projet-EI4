@@ -1,0 +1,13 @@
+# original USA
+
+nbWagons: 45
+
+map:
+  image: USA/map.jpg
+  txt: USA/map.txt
+
+cities: !include USA/cities.yml
+tracks: !include USA/tracks.yml
+objectives: !include USA/objectives.yml
+
+# TODO: add here the special rules (score, longestPath, trainStation, nbInitCard, nbInitObjectives, etc.)

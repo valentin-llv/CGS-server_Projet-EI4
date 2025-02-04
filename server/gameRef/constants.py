@@ -1,0 +1,1 @@
+REQUIRED_FOLDERS = ["server", "api"]

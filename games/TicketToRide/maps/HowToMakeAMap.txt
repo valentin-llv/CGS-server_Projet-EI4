@@ -1,0 +1,48 @@
+A map is composed of a yml file with the following keys:
+
+- `nbWagons`: (int) number of wagons at the beginning of the game
+
+- `map`: (dictionary) describing the map:
+	- `image`: (string) path of the jpg image (for the web)
+	- `txt`: (string) path of the txt map
+
+- cities: list of cities:
+	- name: data
+	where `name` is the name of the city and `data` a dictionary with two keys:
+		- `txt`: list of 3 integers: `line`, `column`, and `size` of the city in the text
+		- `jpg`: list of 2 integers giving the position of the city in the jpg map
+
+- tracks: dictionary of tracks:
+	`city1, city2`: a dictionary describing the track:
+		- `length`: length of the track
+		- `colors`: one or two colors of the track (simple or double track)
+		- `txt`: 3-uplet with the line,column position of one city, and  the path
+			the path is a string composed of characters `N` (for North), `E` (for East), `S` (South) and `W` (West)
+			A path `NNEENN` is a path that start from line;column, goes 2 times North, 2 times East and then 2 times North
+        - `jpg`: a list of positions [x,y,angle] of the wagons of the track on the jpg image
+
+- objectives: dictionary of objectives:
+	`city1, city2`: score
+
+
+It is also possible to use the `!include` directive to include another yml file (to put the cities, tracks and/or objectives in another yml file).
+See the small.yml file for a (complete but simple) example.
+
+
+How to have a text map
+a) put the list of the cities in a `city.yml` file:
+	- city
+b) put the list of tracks in tracks.csv:
+	city1, city2:
+	   length:
+	   colors:
+	color is Multicolor for "gray" tracks that can accept any color
+c) draw it with a software like MonoDraw, export it in text.
+d) add (manualy) in `cities.yml` the position of each city  with line number, column number, and the number of characters, ususally 2, sometimes 3
+	`- city: {txt:[line, column, size]}`
+e) add (manualy) in `tracks.yml` the path of each track
+	`txt: [line, column, path]`
+	the path is a string composed of characters `N` (for North), `E` (for East), `S` (South) and `W` (West)
+	A path `NNEENN` is a path that start from line;column, goes 2 times North, 2 times East and then 2 times North
+
+For step d) and e) you can use testMap.py to compare the map you have exported from MonoDraw in 'map.txt' and the map built from cities.yml and tracks.yml

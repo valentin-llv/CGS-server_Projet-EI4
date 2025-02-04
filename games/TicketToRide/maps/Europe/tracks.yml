@@ -1,0 +1,543 @@
+# map: EUROPE
+
+
+Lisboa, Cadiz:
+  length: 2
+  colors: Blue
+  type: train
+  jpg: []
+  txt: [23, 3, 'SSSE']
+Lisboa, Madrid:
+  length: 3
+  colors: Purple
+  type: train
+  jpg: []
+  txt: [23, 3, 'EEE']
+Cadiz, Madrid:
+  length: 3
+  colors: Orange
+  type: train
+  jpg: []
+  txt: [26, 6, 'EENN']
+Madrid, Barcelona:
+  length: 2
+  colors: Yellow
+  type: train
+  jpg: []
+  txt: [23, 8, 'EESSE']
+Madrid, Pamplona:
+  length: 3
+  colors: White, Black
+  type: tunnel
+  jpg: []
+  txt: [23, 8, 'NNEE']
+Barcelona, Pamplona:
+  length: 2
+  colors: Multicolor
+  type: tunnel
+  jpg: []
+  txt: [21, 12, 'SSS']
+Barcelona, Marseille:
+  length: 4
+  colors: Multicolor
+  type: train
+  jpg: []
+  txt: [25,13, 'EEEEEN']
+Pamplona, Marseille:
+  length: 4
+  colors: Red
+  type: train
+  jpg: []
+  txt: [21, 12, 'EESSEE']
+Pamplona, Paris:
+  length: 4
+  colors: Blue, Green
+  type: train
+  jpg: []
+  txt: [21, 12, 'NNNNN']
+Pamplona, Brest:
+  length: 4
+  colors: Purple
+  type: train
+  jpg: []
+  txt: [15, 6, 'SSSEEEEESS']
+Brest, Paris:
+  length: 3
+  colors: Black
+  type: train
+  jpg: []
+  txt: [15, 6, 'EEEEE']
+Brest, Dieppe:
+  length: 2
+  colors: Orange
+  type: train
+  jpg: []
+  txt: [15, 6, 'NNN']
+Dieppe, Paris:
+  length: 1
+  colors: Purple
+  type: train
+  jpg: []
+  txt: [11, 7, 'SSEEEEES']
+Dieppe, London:
+  length: 2
+  colors: Multicolor, Multicolor
+  type: ferry, 1
+  jpg: []
+  txt: [11, 7, 'NNN']
+Dieppe, Bruxelles:
+  length: 2
+  colors: Green
+  type: train
+  jpg: []
+  txt: [11, 7, 'EEEE']
+Bruxelles, Paris:
+  length: 2
+  colors: Yellow, Red
+  type: train
+  jpg: []
+  txt: [15, 13, 'NNN']
+Bruxelles, Amsterdam:
+  length: 1
+  colors: Black
+  type: train
+  jpg: []
+  txt: [11, 13, 'NNN']
+Amsterdam, London:
+  length: 2
+  colors: Multicolor
+  type: ferry, 2
+  jpg: []
+  txt: [7, 8, 'EEEE']
+London, Edinburgh:
+  length: 4
+  colors: Black, Orange
+  type: train
+  jpg: []
+  txt: [7, 7, 'NNNN']
+Erzurum, Angora:
+  length: 3
+  colors: Black
+  type: train
+  jpg: []
+  txt: [25, 46, 'EEEEENN']
+Erzurum, Sevastopol:
+  length: 4
+  colors: Multicolor
+  type: ferry, 2
+  jpg: []
+  txt: [16, 47, 'SSSSSSEE']
+Erzurum, Sochi:
+  length: 3
+  colors: Red
+  type: train
+  jpg: []
+  txt: [18, 51, 'SSS']
+Angora, Smyrna:
+  length: 3
+  colors: Orange
+  type: tunnel
+  jpg: []
+  txt: [27, 39, 'EEEEEEEN']
+Angora, Constantinople:
+  length: 2
+  colors: Multicolor
+  type: tunnel
+  jpg: []
+  txt: [23, 43, 'SSE']
+Sochi, Sevastopol:
+  length: 2
+  colors: Multicolor
+  type: ferry, 1
+  jpg: []
+  txt: [16, 47, 'EEES']
+Sochi, Rostov:
+  length: 2
+  colors: Multicolor
+  type: train
+  jpg: []
+  txt: [18, 51, 'NNN']
+Sevastopol, Constantinople:
+  length: 4
+  colors: Multicolor
+  type: ferry, 2
+  jpg: []
+  txt: [23, 43, 'EEENNNNNN']
+Sevastopol, Bucuresti:
+  length: 4
+  colors: White
+  type: train
+  jpg: []
+  txt: [16, 41, 'EEEE']
+Rostov, Sevastopol:
+  length: 4
+  colors: Multicolor
+  type: tunnel
+  jpg: []
+  txt: [16, 47, 'NNEE']
+Rostov, Kharkov:
+  length: 2
+  colors: Green
+  type: train
+  jpg: []
+  txt: [12, 47, 'EEES']
+Kharkov, Moskva:
+  length: 4
+  colors: Multicolor
+  type: train
+  jpg: []
+  txt: [12, 47, 'NNEEEEN']
+Kharkov, Kyiv:
+  length: 4
+  colors: Multicolor
+  type: train
+  jpg: []
+  txt: [12, 41, 'EEEE']
+Moskva, Smolensk:
+  length: 2
+  colors: Orange
+  type: train
+  jpg: []
+  txt: [8, 46, 'EEE']
+Moskva, Petrograd:
+  length: 4
+  colors: White
+  type: train
+  jpg: []
+  txt: [2, 44, 'EEEEEEESSSSS']
+Kyiv, Smolensk:
+  length: 3
+  colors: Red
+  type: train
+  jpg: []
+  txt: [12, 41, 'NNEEEEN']
+Kyiv, Wilno:
+  length: 2
+  colors: Multicolor
+  type: train
+  jpg: []
+  txt: [8, 40, 'SSS']
+Kyiv, Warszawa:
+  length: 4
+  colors: Multicolor
+  type: train
+  jpg: []
+  txt: [8, 35, 'SSSSEEEE']
+Kyiv, Budapest:
+  length: 6
+  colors: Multicolor
+  type: tunnel
+  jpg: []
+  txt: [16, 34, 'NNEEEEEEN']
+Wilno, Smolensk:
+  length: 3
+  colors: Yellow
+  type: train
+  jpg: []
+  txt: [8,41, 'EEE']
+Wilno, Warszawa:
+  length: 3
+  colors: Red
+  type: train
+  jpg: []
+  txt: [8, 35, 'EEEE']
+Wilno, Riga:
+  length: 4
+  colors: Green
+  type: train
+  jpg: []
+  txt: [8, 40, 'NNN']
+Wilno, Petrograd:
+  length: 4
+  colors: Blue
+  type: train
+  jpg: []
+  txt: [8, 41, 'NNNEEENN']
+Riga, Petrograd:
+  length: 4
+  colors: Multicolor
+  type: train
+  jpg: []
+  txt: [4, 40, 'EEEN']
+Stockholm, Petrograd:
+  length: 8
+  colors: Multicolor
+  type: tunnel
+  jpg: []
+  txt: [2, 33, 'EEEEEEEEE']
+Smyrna, Constantinople:
+  length: 2
+  colors: Multicolor
+  type: tunnel
+  jpg: []
+  txt: [27, 39, 'NNEEEN']
+Smyrna, Palermo:
+  length: 6
+  colors: Multicolor
+  type: ferry, 2
+  jpg: []
+  txt: [27, 24, 'EEEEEEEEEEEEE']
+Smyrna, Athina:
+  length: 2
+  colors: Multicolor
+  type: ferry, 1
+  jpg: []
+  txt: [25, 34, 'EEEES']
+Constantinople, Sofia:
+  length: 3
+  colors: Blue
+  type: train
+  jpg: []
+  txt: [21, 39, 'EEES']
+Constantinople, Bucuresti:
+  length: 3
+  colors: Yellow
+  type: train
+  jpg: []
+  txt: [16, 41, 'SSSEESSS']
+Bucuresti, Sofia:
+  length: 2
+  colors: Multicolor
+  type: tunnel
+  jpg: []
+  txt: [16, 40, 'SSWWSS']
+Bucuresti, Budapest:
+  length: 4
+  colors: Multicolor
+  type: tunnel
+  jpg: []
+  txt: [16, 34, 'EEEEE']
+Bucuresti, Kyiv:
+  length: 4
+  colors: Multicolor
+  type: train
+  jpg: []
+  txt: [12, 41, 'SSS']
+Riga, Danzig:
+  length: 3
+  colors: Black
+  type: train
+  jpg: []
+  txt: [6, 31, 'NNEEEEEEE']
+Stockholm, Kobenhavn:
+  length: 3
+  colors: Yellow, White
+  type: train
+  jpg: []
+  txt: [3, 21, 'EEEEENEEEEE']
+Kobenhavn, Essen:
+  length: 3
+  colors: Multicolor, Multicolor
+  type: ferry, 1
+  jpg: []
+  txt: [7, 20, 'NNN']
+Danzig, Berlin:
+  length: 4
+  colors: Multicolor
+  type: train
+  jpg: []
+  txt: [8, 27, 'NNEE']
+Danzig, Warszawa:
+  length: 2
+  colors: Multicolor
+  type: train
+  jpg: []
+  txt: [6, 31, 'EEES']
+Warszawa, Berlin:
+  length: 4
+  colors: Purple, Yellow
+  type: train
+  jpg: []
+  txt: [8, 27, 'EEEEEE']
+Warszawa, Wien:
+  length: 4
+  colors: Blue
+  type: train
+  jpg: []
+  txt: [15, 28, 'NNNNEEEEEENN']
+Wien, Budapest:
+  length: 1
+  colors: Red, White
+  type: train
+  jpg: []
+  txt: [15, 28, 'EESEE']
+Budapest, Zagrab:
+  length: 2
+  colors: Orange
+  type: train
+  jpg: []
+  txt: [19, 29, 'EEEENN']
+Budapest, Sarajevo:
+  length: 3
+  colors: Purple
+  type: train
+  jpg: []
+  txt: [16, 34, 'SSSS']
+Sarajevo, Sofia:
+  length: 2
+  colors: Multicolor
+  type: tunnel
+  jpg: []
+  txt: [21, 34, 'EEE']
+Sofia, Athina:
+  length: 3
+  colors: Purple
+  type: train
+  jpg: []
+  txt: [25, 34, 'NNEEEEN']
+Sarajevo, Zagrab:
+  length: 3
+  colors: Red
+  type: train
+  jpg: []
+  txt: [19, 28, 'SSEEEE']
+Sarajevo, Athina:
+  length: 4
+  colors: Green
+  type: train
+  jpg: []
+  txt: [21, 33, 'SSS']
+Athina, Brindisi:
+  length: 4
+  colors: Multicolor
+  type: ferry, 1
+  jpg: []
+  txt: [23, 29, 'SSEEE']
+Palermo, Brindisi:
+  length: 3
+  colors: Multicolor
+  type: ferry, 1
+  jpg: []
+  txt: [27, 24, 'NNEEEEN']
+Roma, Brindisi:
+  length: 2
+  colors: White
+  type: train
+  jpg: []
+  txt: [23,24, 'EEE']
+Roma, Venezia:
+  length: 2
+  colors: Black
+  type: train
+  jpg: []
+  txt: [19, 23, 'SSS']
+Roma, Marseille:
+  length: 4
+  colors: Multicolor
+  type: tunnel
+  jpg: []
+  txt: [23, 18, 'EEEE']
+Roma, Palermo:
+  length: 4
+  colors: Multicolor
+  type: ferry, 1
+  jpg: []
+  txt: [23, 23, 'SSS']
+Berlin, Frankfurt:
+  length: 3
+  colors: Black, Red
+  type: train
+  jpg: []
+  txt: [11, 20, 'EEEEEENN']
+Berlin, Wien:
+  length: 3
+  colors: Green
+  type: train
+  jpg: []
+  txt: [8, 27, 'SSSSSS']
+Essen, Amsterdam:
+  length: 3
+  colors: Yellow
+  type: train
+  jpg: []
+  txt: [7, 14, 'EEEE']
+Essen, Frankfurt:
+  length: 2
+  colors: Green
+  type: train
+  jpg: []
+  txt: [11, 20, 'NNN']
+Essen, Berlin:
+  length: 2
+  colors: Blue
+  type: train
+  jpg: []
+  txt: [7, 20, 'EEESEE']
+Amsterdam, Frankfurt:
+  length: 2
+  colors: White
+  type: train
+  jpg: []
+  txt: [7, 14, 'SSEEEEES']
+Frankfurt, Bruxelles:
+  length: 2
+  colors: Blue
+  type: train
+  jpg: []
+  txt: [11, 13, 'EEEEE']
+Frankfurt, Paris:
+  length: 3
+  colors: White, Orange
+  type: train
+  jpg: []
+  txt: [15, 14, 'NNEEEEEN']
+Frankfurt, Munchen:
+  length: 2
+  colors: Purple
+  type: train
+  jpg: []
+  txt: [15, 20, 'NNN']
+Munchen, Zurich:
+  length: 2
+  colors: Yellow
+  type: tunnel
+  jpg: []
+  txt: [19, 19, 'NNN']
+Munchen, Venezia:
+  length: 2
+  colors: Blue
+  type: tunnel
+  jpg: []
+  txt: [15, 20, 'SSEEES']
+Munchen, Wien:
+  length: 3
+  colors: Orange
+  type: train
+  jpg: []
+  txt: [15, 20, 'EEEEEE']
+Zagrab, Wien:
+  length: 2
+  colors: Multicolor
+  type: train
+  jpg: []
+  txt: [15, 28, 'SSS']
+Zagrab, Venezia:
+  length: 2
+  colors: Multicolor
+  type: train
+  jpg: []
+  txt: [19, 24, 'EEE']
+Zurich, Venezia:
+  length: 2
+  colors: Green
+  type: tunnel
+  jpg: []
+  txt: [19, 19, 'EEE']
+Zurich, Marseille:
+  length: 2
+  colors: Purple
+  type: tunnel
+  jpg: []
+  txt: [19, 18, 'SSS']
+Zurich, Paris:
+  length: 3
+  colors: Multicolor
+  type: tunnel
+  jpg: []
+  txt: [15, 14, 'SSEEEES']
+Paris, Marseille:
+  length: 4
+  colors: Multicolor
+  type: train
+  jpg: []
+  txt: [15, 13, 'SSSSEEEESSS']

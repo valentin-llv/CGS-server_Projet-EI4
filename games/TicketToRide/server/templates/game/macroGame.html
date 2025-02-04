@@ -1,0 +1,99 @@
+{% macro socketGame(prefix) %}
+<script type="text/javascript">
+    {% include "game/cards.js" %}
+    {% include "game/updateGame.js" %}
+
+</script>
+{% endmacro %}
+
+{% macro styleGame() %}
+<style>
+* {
+    box-sizing: border-box;
+}
+#content {
+    padding: 20px;
+}
+#game_content {
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    grid-gap: 10px;
+}
+#game-info-container {
+    display: grid;
+    grid-template-rows: auto auto 6fr auto 4fr;
+    max-height: 85vh;
+    min-height: 600px;
+}
+.game-info-frame {
+    padding: 10px;
+    border: 2px solid;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    overflow-y: scroll;
+}
+.p-info-frame {
+    padding: 20px;
+    height: auto;
+    overflow-y: hidden;
+}
+#p1-info {
+    border-color: blue;
+}
+#p2-info {
+    border-color: red;
+}
+#comments {
+    border-color: #a9a9a9;
+}
+#comments::before{
+    content: "Comments: ";
+    display: block;
+    font-weight: bold;
+    font-style: italic;
+}
+#moves{
+    border-color: #fea347;
+    line-height: 1.5em;
+}
+#moves::before{
+    content: "Moves: ";
+    display: block;
+    font-weight: bold;
+    font-style: italic;
+}
+#faceup {
+    border-color: #9370db;
+}
+.card{
+    background-color:#fff;
+    width: 64px;
+    height: 100px;
+    background-clip: content-box;
+}
+.result{
+    font-weight: 1000;
+}
+
+</style>
+{% endmacro %}
+
+{% macro contentGame() %}
+<div id="game_content" style="padding: 5px 0">
+    <canvas style="display:block; margin: 0 auto; width: 100%;" id="game_canvas">
+    </canvas>
+    <div id="game-info-container">
+        <div id="p1-info" class="p-info-frame game-info-frame"></div>
+        <div id="p2-info" class="p-info-frame game-info-frame"></div>
+        <div id="moves" class="game-info-frame"></div>
+        <div id="faceup" class="game-info-frame"><table style="margin: 0 auto;"><tr>
+            <td class="card" id="f0"></td>
+            <td class="card" id="f1"></td>
+            <td class="card" id="f2"></td>
+            <td class="card" id="f3"></td>
+            <td class="card" id="f4"></td>
+        </tr></table></div>
+        <div id="comments" class="game-info-frame"></div>
+    </div>
+</div>
+{% endmacro %}

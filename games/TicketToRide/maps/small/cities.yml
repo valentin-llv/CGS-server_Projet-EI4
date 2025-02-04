@@ -1,0 +1,9 @@
+# small map
+- Zero: {txt:[2, 2, 2]}
+- Un: {txt: [7, 2, 2]}
+- Deux: {txt: [7, 16, 2]}
+- Trois: {txt: [13, 16, 2]}
+- Quatre: {txt: [13, 2, 2]}
+- Cinq: {txt: [7, 30, 2]}
+- Six: {txt: [2, 30, 2]}
+- Sept: {txt: [18, 9, 2]}

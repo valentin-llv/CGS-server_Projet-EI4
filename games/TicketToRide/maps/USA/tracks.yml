@@ -1,0 +1,392 @@
+# map: USA (original version)
+
+Atlanta, Charleston:
+  colors: Multicolor
+  jpg: [[971, 518, 90], [1013, 520, 90]]
+  length: 2
+  txt: [20, 47, 'EEEEE']
+Atlanta, Miami:
+  colors: Blue
+  jpg: [[952, 540, 139], [979, 573, 139], [1006, 606, 139], [1033, 639, 139], [1060, 672, 139]]
+  length: 5
+  txt: [20, 47, 'SSEEEEEES']
+Atlanta, Nashville:
+  colors: Multicolor
+  jpg: [[901, 482, 131]]
+  length: 1
+  txt: [16, 46, 'SSS']
+Atlanta, New Orleans:
+  colors: Yellow, Orange
+  jpg: [[837, 628, 20], [858, 589, 30], [882, 556, 40], [911, 526, 45]]
+  length: 4
+  txt: [24, 39, 'NNNNEEEEEE']
+Calgary, Helena:
+  colors: Multicolor
+  jpg: [[300, 129, 140], [328, 163, 140], [356, 197, 140], [384, 231, 140]]
+  length: 4
+  txt: [2, 10, 'SSEEEEEES']
+Calgary, Winnipeg:
+  colors: White
+  jpg: [[312, 91, 65], [352, 79, 74], [393, 74, 88], [436, 74, 93], [478, 81, 108], [517, 96, 122]]
+  length: 6
+  txt: [2, 10, 'EEEEEE']
+Chicago, Pittsburgh:
+  colors: Black, Orange
+  jpg: [[849, 307, 79], [891, 298, 84], [932, 296, 92]]
+  length: 3
+  txt: [10, 38, 'EEEEEE']
+Chicago, Saint Louis:
+  colors: White, Green
+  jpg: [[797, 353, 35], [775, 388, 35]]
+  length: 2
+  txt: [10, 37, 'SSS']
+Chicago, Toronto:
+  colors: White
+  jpg: [[825, 288, 42], [856, 261, 53], [895, 242, 68], [933, 223, 49]]
+  length: 4
+  txt: [10, 38, 'NNEEEEEEN']
+Dallas, Houston:
+  colors: Multicolor, Multicolor
+  jpg: [[688, 643, 143]]
+  length: 1
+  txt: [21, 33, 'SS']
+Dallas, Little Rock:
+  colors: Multicolor
+  jpg: [[696, 583, 39], [720, 550, 39]]
+  length: 2
+  txt: [21, 33, 'EEEENN']
+Denver, Kansas City:
+  colors: Black, Orange
+  jpg: [[506, 446, 93], [548, 447, 85], [590, 441, 80], [632, 428, 70]]
+  length: 4
+  txt: [12, 21, 'EEEESEEE']
+Denver, Oklahoma City:
+  colors: Red
+  jpg: [[487, 472, 135], [523, 497, 115], [563, 509, 95], [605, 513, 90]]
+  length: 4
+  txt: [12, 21, 'SSEEEEEEEESS']
+Denver, Omaha:
+  colors: Purple
+  jpg: [[490, 414, 55], [526, 391, 70], [566, 376, 80], [607, 367, 85]]
+  length: 4
+  txt: [12, 20, 'NNEEEEEEEE']
+Denver, Santa Fe:
+  colors: Multicolor
+  jpg: [[460, 474, 2], [458, 514, 2]]
+  length: 2
+  txt: [12, 20, 'SSSSS']
+Duluth, Chicago:
+  colors: Red
+  jpg: [[701, 271, 126], [740, 289, 110], [780, 301, 100]]
+  length: 6
+  txt: [6, 31, 'SSEEEEEES']
+Duluth, Omaha:
+  colors: Multicolor, Multicolor
+  jpg: [[648, 325, 25], [664, 286, 25]]
+  length: 2
+  txt: [6, 30, 'SSS']
+Duluth, Sault St. Marie:
+  colors: Multicolor
+  jpg: [[715, 223, 64], [754, 205, 64], [793, 187, 64]]
+  length: 3
+  txt: [6, 31, 'NNEEEEEEN']
+Duluth, Toronto:
+  colors: Purple
+  jpg: [[707, 245, 77], [749, 238, 77], [791, 231, 77], [833, 224, 77], [875, 217, 77], [917, 210, 77]]
+  length: 6
+  txt: [6, 31, 'EEEEEEEEEEEE']
+El Paso, Dallas:
+  colors: Red
+  jpg: [[505.0, 652.0, 82], [547.5, 645.5, 82], [590.0, 639.0, 82], [632.5, 632.5, 82]]
+  length: 4
+  txt: [21, 22, 'EEEEEEEEE']
+El Paso, Houston:
+  colors: Green
+  jpg: [[477, 669, 114], [516, 686, 105], [557, 696, 97], [599, 700, 94], [642, 697, 84], [682, 686, 76]]
+  length: 6
+  txt: [21, 22, 'SSSEEEEEEEEE']
+El Paso, Oklahoma City:
+  colors: Yellow
+  jpg: [[483, 637, 79], [522, 622, 67], [559, 601, 58], [592, 574, 45], [619, 543, 38]]
+  length: 5
+  txt: [21, 22, 'NNEEEEEEEN']
+Helena, Denver:
+  colors: Green
+  jpg: [[411, 286, 158], [428, 324, 158], [445, 362, 158], [462, 400, 158]]
+  length: 4
+  txt: [6, 17, 'SSSEESS']
+Helena, Duluth:
+  colors: Orange
+  jpg: [[432, 256.0, 90], [474, 255.75, 90], [516, 255.5, 90], [558, 255.25, 90], [600, 255.0, 90], [642, 254.75, 90]]
+  length: 6
+  txt: [6, 18, 'EEEEEEEEEEE']
+Helena, Omaha:
+  colors: Red
+  jpg: [[443.0, 280, 110], [481.5, 295, 110], [520.0, 310, 110], [558.5, 325, 110], [597.0, 340, 110]]
+  length: 5
+  txt: [6, 18, 'SSEEEEEEEEEEES']
+Helena, Salt Lake City:
+  colors: Purple
+  jpg: [[336, 360, 28], [358, 324, 28], [380, 288, 28]]
+  length: 3
+  txt: [6, 16, 'SSSWWWWSS']
+Helena, Winnipeg:
+  colors: Blue
+  jpg: [[427, 227, 45], [457, 197, 45], [487, 167, 45], [517, 137, 45]]
+  length: 4
+  txt: [6, 17, 'NNN']
+Houston, New Orleans:
+  colors: Multicolor
+  jpg: [[744, 663, 80], [785, 657, 80]]
+  length: 2
+  txt: [24, 33, 'EEEE']
+Kansas City, Oklahoma City:
+  colors: Multicolor, Multicolor
+  jpg: [[652, 489, 20], [663, 450, 20]]
+  length: 2
+  txt: [13, 30, 'SSS']
+Kansas City, Saint Louis:
+  colors: Blue, Purple
+  jpg: [[694, 416, 90], [736, 415, 90]]
+  length: 2
+  txt: [13, 30, 'EEESEEE']
+Little Rock, Nashville:
+  colors: White
+  jpg: [[776, 520, 85], [818, 509, 60], [854, 486, 47]]
+  length: 3
+  txt: [18, 38, 'EEENNEEE']
+Little Rock, New Orleans:
+  colors: Green
+  jpg: [[763, 551, 157], [783, 589, 157], [803, 627, 157]]
+  length: 3
+  txt: [18, 38, 'SSSSS']
+Los Angeles, El Paso:
+  colors: Black
+  jpg: [[204, 620, 133], [240, 641, 118], [280, 655, 112], [321, 664, 100], [364, 665, 88], [405, 659, 80]]
+  length: 6
+  txt: [20, 8, 'SSSEEEEEEEEEEEEEN']
+Los Angeles, Las Vegas:
+  colors: Multicolor
+  jpg: [[184, 562, 25], [216, 535, 85]]
+  length: 2
+  txt: [20, 8, 'NN']
+Los Angeles, Phoenix:
+  colors: Multicolor
+  jpg: [[203, 588, 85], [244, 586, 90], [286, 591, 100]]
+  length: 3
+  txt: [20, 8, 'EENNEE']
+Miami, Charleston:
+  colors: Purple
+  jpg: [[1046, 544, 179], [1050, 587, 176], [1059, 627, 160], [1076, 666, 152]]
+  length: 4
+  txt: [20, 54, 'SSS']
+Miami, New Orleans:
+  colors: Red
+  jpg: [[864, 647, 58], [904, 631, 72], [945, 625, 90], [986, 635, 121], [1021, 659, 131], [1050, 688, 140]]
+  length: 6
+  txt: [24, 39, 'EEEEEEEEEEEEE']
+Montréal, Boston:
+  colors: Multicolor, Multicolor
+  jpg: [[1075, 117, 132], [1108, 144, 132]]
+  length: 2
+  txt: [2, 46, 'EEESSEEE']
+Montréal, New York:
+  colors: Blue
+  jpg: [[1045, 136, 172], [1051, 177, 172], [1058, 218, 172]]
+  length: 3
+  txt: [2, 46, 'SSSEEEEEEESS']
+Montréal, Toronto:
+  colors: Multicolor
+  jpg: [[955, 168, 26], [982, 134, 47], [1017, 111, 65]]
+  length: 3
+  txt: [2, 45, 'SSS']
+New York, Boston:
+  colors: Yellow, Red
+  jpg: [[1116, 196, 29], [1095, 229, 29]]
+  length: 2
+  txt: [4, 54, 'SSS']
+New York, Pittsburgh:
+  colors: White, Green
+  jpg: [[1001, 285, 60], [1037, 263, 60]]
+  length: 2
+  txt: [10, 46, 'NNEEEEEE']
+New York, Washington:
+  colors: Orange, Black
+  jpg: [[1077, 286, -2], [1080, 327, -2]]
+  length: 2
+  txt: [8, 54, 'SS']
+Oklahoma City, Dallas:
+  colors: Multicolor, Multicolor
+  jpg: [[660, 590, 175], [655, 550, 175]]
+  length: 2
+  txt: [17, 30, 'SSEEES']
+Oklahoma City, Little Rock:
+  colors: Multicolor
+  jpg: [[674, 519, 89.5], [715, 518, 89.5]]
+  length: 2
+  txt: [17, 30, 'EEESEEE']
+Omaha, Chicago:
+  colors: Blue
+  jpg: [[670, 346, 48], [704, 323, 51], [744, 313, 97], [786, 319, 97]]
+  length: 4
+  txt: [10, 30, 'EEEEEE']
+Omaha, Kansas City:
+  colors: Multicolor, Multicolor
+  jpg: [[655, 387, 155]]
+  length: 1
+  txt: [10, 30, 'SS']
+Phoenix, Denver:
+  colors: White
+  jpg: [[326, 576, 20], [344, 540, 27], [366, 504, 32], [393, 473, 47], [431, 452, 75]]
+  length: 5
+  txt: [18, 14, 'NNNEEEEENN']
+Phoenix, El Paso:
+  colors: Multicolor
+  jpg: [[342, 616, 105], [382, 629, 105], [422, 642, 105]]
+  length: 3
+  txt: [18, 14, 'SSSEEEEE']
+Phoenix, Santa Fe:
+  colors: Multicolor
+  jpg: [[350, 590, 63], [389, 570, 63], [428, 550, 63]]
+  length: 3
+  txt: [18, 14, 'EEEEE']
+Pittsburgh, Nashville:
+  colors: Yellow
+  jpg: [[872, 437, 27], [894, 403, 37], [927, 373, 53], [957, 345, 32]]
+  length: 4
+  txt: [10, 46, 'SSSSS']
+Pittsburgh, Raleigh:
+  colors: Multicolor
+  jpg: [[986, 351, 171], [995, 391, 171]]
+  length: 2
+  txt: [10, 47, 'SSSEEEESS']
+Pittsburgh, Toronto:
+  colors: Multicolor
+  jpg: [[964, 271, -2], [962, 229, -2]]
+  length: 2
+  txt: [10, 45, 'NNN']
+Pittsburgh, Washington:
+  colors: Multicolor
+  jpg: [[1007, 325, 120], [1044, 343, 120]]
+  length: 2
+  txt: [10, 47, 'EEESEE']
+Portland, Salt Lake City:
+  colors: Blue
+  jpg: [[133, 252, 97], [173, 264, 115], [211, 283, 128], [245, 307, 135], [277, 337, 140], [300, 371, 153]]
+  length: 6
+  txt: [9, 3, 'EEEEEEEESS']
+Portland, San Francisco:
+  colors: Green, Purple
+  jpg: [[86, 276, 20], [74, 316, 10], [71, 358, 0], [70, 399, -4], [77, 443, -15]]
+  length: 5
+  txt: [9, 3, 'SSSSSS']
+Raleigh, Atlanta:
+  colors: Multicolor, Multicolor
+  jpg: [[958, 485, 45], [989, 458, 45]]
+  length: 2
+  txt: [16, 51, 'SSWWWWS']
+Raleigh, Charleston:
+  colors: Multicolor
+  jpg: [[1036, 457, 120], [1055, 486, 24]]
+  length: 2
+  txt: [16, 52, 'SSEES']
+Raleigh, Nashville:
+  colors: Black
+  jpg: [[900, 445, 50], [940, 428, 80], [983, 424, 90]]
+  length: 3
+  txt: [16, 46, 'EEEE']
+Raleigh, Washington:
+  colors: Multicolor, Multicolor
+  jpg: [[1060, 383, 37], [1033, 415, 37]]
+  length: 2
+  txt: [16, 52, 'NNNEEN']
+Saint Louis, Little Rock:
+  colors: Multicolor
+  jpg: [[761, 451, 10], [751, 491, 10]]
+  length: 2
+  txt: [14, 37, 'SSS']
+Saint Louis, Nashville:
+  colors: Multicolor
+  jpg: [[795, 444, 105], [836, 456, 105]]
+  length: 2
+  txt: [14, 38, 'EEEEEEES']
+Saint Louis, Pittsburgh:
+  colors: Green
+  jpg: [[795, 413, 58], [831, 392, 58], [867, 371, 58], [903, 350, 58], [939, 329, 58]]
+  length: 5
+  txt: [14, 38, 'NNEEEEEEEN']
+Salt Lake City, Denver:
+  colors: Red, Yellow
+  jpg: [[346.0, 406, 102], [387.5, 416, 102], [429.0, 426, 102]]
+  length: 3
+  txt: [12, 12, 'EEEEEE']
+Salt Lake City, Las Vegas:
+  colors: Orange
+  jpg: [[276, 513, 45], [300, 478, 18], [311, 436, 5]]
+  length: 3
+  txt: [12, 12, 'SSWWWWSS']
+San Francisco, Los Angeles:
+  colors: Yellow, Purple
+  jpg: [[99, 509, -20], [119, 545, -40], [146, 577, -45]]
+  length: 3
+  txt: [16, 3, 'SSSSEEE']
+San Francisco, Salt Lake City:
+  colors: Orange, White
+  jpg: [[123, 463, 75], [162, 450, 75], [201, 437, 75], [240, 424, 75], [279, 411, 75]]
+  length: 5
+  txt: [16, 3, 'EEEENNNNEEE']
+Santa Fe, El Paso:
+  colors: Multicolor
+  jpg: [[455, 576, 2], [453, 616, 2]]
+  length: 2
+  txt: [18, 21, 'SS']
+Santa Fe, Oklahoma City:
+  colors: Blue
+  jpg: [[492, 543, 85], [534, 537, 85], [576, 531, 85]]
+  length: 3
+  txt: [18, 21, 'EEEENEEE']
+Sault St. Marie, Montréal:
+  colors: Black
+  jpg: [[850, 149, 42], [885, 125, 55], [923, 109, 67], [963, 97, 80], [1006, 92, 90]]
+  length: 5
+  txt: [2, 38, 'EEEEEE']
+Sault St. Marie, Toronto:
+  colors: Multicolor
+  jpg: [[861, 179, 100], [903, 188, 100]]
+  length: 2
+  txt: [2, 38, 'SSEEEEEES']
+Seattle, Calgary:
+  colors: Multicolor
+  jpg: [[160, 185, 88], [202, 183, 85], [241, 166, 48], [269, 133, 23]]
+  length: 4
+  txt: [6, 4, 'NNEEEEEN']
+Seattle, Helena:
+  colors: Yellow
+  jpg: [[157, 206.0, 104], [198, 215.5, 104], [239, 225.0, 104], [280, 234.5, 104], [321, 244.0, 104], [362, 253.5, 104]]
+  length: 6
+  txt: [6, 4, 'EEEEEEEEEEE']
+Seattle, Portland:
+  colors: Multicolor, Multicolor
+  jpg: [[112, 214, 20]]
+  length: 1
+  txt: [6, 3, 'SS']
+Vancouver, Calgary:
+  colors: Multicolor
+  jpg: [[164, 115, 85], [205, 110, 85], [248, 105, 85]]
+  length: 3
+  txt: [2, 3, 'EEEEE']
+Vancouver, Seattle:
+  colors: Multicolor, Multicolor
+  jpg: [[126, 156, 0]]
+  length: 1
+  txt: [2, 3, 'SSS']
+Winnipeg, Duluth:
+  colors: Black
+  jpg: [[568.0, 139, 135], [597.5, 167, 135], [627.0, 195, 135], [656.5, 223, 135]]
+  length: 4
+  txt: [2, 18, 'SSEEEEEEEEEEEES']
+Winnipeg, Sault St. Marie:
+  colors: Multicolor
+  jpg: [[586, 117, 105], [627, 126, 105], [668, 135, 105], [709, 144, 105], [750, 153, 105], [791, 162, 105]]
+  length: 6
+  txt: [2, 18, 'EEEEEEEEEEEEEEEEEE']

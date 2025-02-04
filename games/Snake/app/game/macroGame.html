@@ -1,0 +1,69 @@
+{% macro socketGame(prefix) %}
+<script type="text/javascript">
+    /* images in base64 */
+    {% include "game/image-snake.js" %}
+     /* when received update about a Game, just display it */
+    function updateWebSocket() {
+        let pos_tail = [[0,0],[0,0]];     /* last positions (to draw in white if needed) */
+        socket.on('update{{ GameName }}', function (msg) {
+            let data = JSON.parse(msg);
+            /* arena */
+            if (data.hasOwnProperty('arena'))
+                document.getElementById('{{prefix}}arena').innerHTML = data['arena'];
+            if (data.hasOwnProperty('names')) {
+                document.getElementById('{{prefix}}name0').innerText = data['names'][0];
+                document.getElementById('{{prefix}}name1').innerText = data['names'][1];
+            }
+            /* snakes */
+            for (let pl = 0; pl < 2; pl++) {
+                /* remove last snake */
+                document.getElementById('t_' + pos_tail[pl][0] + '_' + pos_tail[pl][1]).style.backgroundImage = '';
+                /* draw the head, body and tail */
+                let snake = data['pl'][pl];
+                for (let j = 0; j < snake.length; j++) {
+                    if (j == 0)
+                        document.getElementById('t_' + snake[j][0] + '_' + snake[j][1]).style.backgroundImage = head[pl][snake[j][2]];
+                    else if (j == snake.length - 1)
+                        document.getElementById('t_' + snake[j][0] + '_' + snake[j][1]).style.backgroundImage = tail[pl][snake[j][2]];
+                    else
+                        document.getElementById('t_' + snake[j][0] + '_' + snake[j][1]).style.backgroundImage = body[pl][snake[j][2]][snake[j][3]];
+                }
+                /* keep the position of the tail*/
+                pos_tail[pl] = snake[snake.length - 1];
+                /* counter */
+                document.getElementById('{{prefix}}counters' + pl.toString()).innerText = data['counters'][pl];
+            }
+            /* comments */
+            let comments = document.getElementById('{{prefix}}comments');
+            comments.innerHTML += data['comments'];
+            comments.scrollTop = comments.scrollHeight;
+        });
+    }
+    /* register to endOfGame and display it when received*/
+    function displayEndOfGame(){
+        socket.on('endOfGame', function(msg){
+            document.getElementById('endOfGame').innerHTML = msg;
+        });
+    }
+</script>
+{% endmacro %}
+
+{% macro styleGame() %}
+<style>
+    .arena {
+        padding: 0px;
+        border: solid #000;
+        width: 22px;
+        height: 22px;
+        background-clip: padding-box;
+    }
+</style>
+{% endmacro %}
+
+{% macro contentGame() %}
+    <span style="color:#f00">Player 1</span>:&nbsp;</span><span id="game_name0"></span>(<span id="game_counters0"></span>)
+    <span style="color:#0f0">Player 2</span>:&nbsp;</span><span id="game_name1"></span>(<span id="game_counters1"></span>)
+    <br/><br/>
+    <div id="game_arena"  style="background-color:#fff; float:left;margin-right: 50px;"></div>
+    <div style="overflow-y: scroll; height:400px; float:right;" id="game_comments"></div>
+{% endmacro %}

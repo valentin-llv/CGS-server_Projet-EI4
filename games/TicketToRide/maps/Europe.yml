@@ -1,0 +1,14 @@
+# original Europe
+
+nbWagons: 45
+
+map:
+  image: Europe/Europe.png
+  txt: Europe/Europe.txt
+
+cities: !include Europe/cities.yml
+tracks: !include Europe/tracks.yml
+objectives: !include Europe/objectives.yml
+
+# TODO: consider ferries and tunnels
+# TODO: add here the special rules (score, longestPath, trainStation, nbInitCard, nbInitObjectives, etc.)

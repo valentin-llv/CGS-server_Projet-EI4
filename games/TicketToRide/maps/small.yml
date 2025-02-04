@@ -1,0 +1,12 @@
+# small example
+# dummy map to help students
+
+nbWagons: 15
+
+map:
+  image: small/small.png
+  txt: small/map.txt
+
+cities: !include small/cities.yml
+tracks: !include small/tracks.yml
+objectives: !include small/objectives.yml

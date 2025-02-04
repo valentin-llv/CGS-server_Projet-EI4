@@ -1,0 +1,46 @@
+# tracks
+
+Zero, Six:
+  length: 6
+  colors: Multicolor, None
+  txt: [2, 3, 'EEEEEEEEEEEEEEEEEEEEEEEEEE']
+Zero, Un:
+  length: 2
+  colors: Multicolor, None
+  txt: [2, 3, 'SSSS']
+Un, Deux:
+  length: 2
+  colors: Multicolor, None
+  txt: [7, 3, 'EEEEEEEEEEEE']
+Deux, Cinq:
+  length: 2
+  colors: Multicolor, None
+  txt: [7, 17, 'EEEEEEEEEEEE']
+Cinq, Six:
+  length: 3
+  colors: Multicolor, None
+  txt: [7, 31, 'NNNN']
+Un, Quatre:
+  length: 3
+  colors: Multicolor, None
+  txt: [7, 3, 'SSSSS']
+Quatre, Trois:
+  length: 1
+  colors: Multicolor, None
+  txt: [13, 3, 'EEEEEEEEEEEE']
+Trois, Deux:
+  length: 4
+  colors: Multicolor, None
+  txt: [7, 17, 'SSSSS']
+Trois, Cinq:
+  length: 5
+  colors: Multicolor, None
+  txt: [13, 17, 'EEEEEEEEEEEEEENNNNN']
+Quatre, Sept:
+  length: 5
+  colors: Multicolor, None
+  txt: [13, 3, 'SSSSSEEEEE']
+Trois, Sept:
+  length: 3
+  colors: Multicolor, None
+  txt: [18, 10, 'EEEEEEENNNN']

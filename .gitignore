@@ -1,0 +1,6 @@
+logs
+
+**/**/bot
+**/**/dist
+
+**/**/valgrind-out.txt

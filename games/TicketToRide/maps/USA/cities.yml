@@ -1,0 +1,38 @@
+# map: USA
+
+- Vancouver: {jpg: [128, 123], txt: [2, 2, 2]}
+- Seattle: {jpg: [124, 186], txt: [6, 3, 2]}
+- Portland: {jpg: [98, 247], txt: [9, 2, 2]}
+- San Francisco: {jpg: [82, 477], txt: [16, 2, 2]}
+- Los Angeles: {jpg: [170, 597], txt: [20, 7, 2]}
+- Phoenix: {jpg: [316, 610], txt: [18, 13, 2]}
+- Las Vegas: {jpg: [248, 531], txt: [17, 7, 2]}
+- Salt Lake City: {jpg: [313, 402], txt: [12, 11, 2]}
+- Calgary: {jpg: [281, 102], txt: [2, 9, 2]}
+- Helena: {jpg: [398, 258], txt: [6, 16, 3]}
+- Winnipeg: {jpg: [544, 115], txt: [2, 17, 2]}
+- Denver: {jpg: [466, 438], txt: [12, 19, 3]}
+- Santa Fe: {jpg: [458, 544], txt: [18, 20, 2]}
+- El Paso: {jpg: [454, 654], txt: [21, 21, 2]}
+- Houston: {jpg: [712, 670], txt: [24, 32, 2]}
+- Dallas: {jpg: [663, 623], txt: [21, 32, 2]}
+- Oklahoma City: {jpg: [640, 519], txt: [17, 29, 2]}
+- Kansas City: {jpg: [664, 417], txt: [13, 29, 2]}
+- Omaha: {jpg: [640, 358], txt: [10, 29, 2]}
+- Duluth: {jpg: [674, 250], txt: [6, 30, 2]}
+- Sault St. Marie: {jpg: [823, 173], txt: [2, 37, 2]}
+- Chicago: {jpg: [818, 323], txt: [10, 37, 2]}
+- Saint Louis: {jpg: [764, 419], txt: [14, 37, 2]}
+- Little Rock: {jpg: [746, 523], txt: [18, 37, 2]}
+- New Orleans: {jpg: [821, 655], txt: [24, 38, 2]}
+- Atlanta: {jpg: [935, 506], txt: [20, 46, 2]}
+- Nashville: {jpg: [875, 465], txt: [16, 45, 2]}
+- Pittsburgh: {jpg: [972, 305], txt: [10, 45, 3]}
+- Toronto: {jpg: [952, 199], txt: [6, 44, 2]}
+- Montréal: {jpg: [1048, 96], txt: [2, 45, 2]}
+- Boston: {jpg: [1131, 165], txt: [4, 53, 2]}
+- New York: {jpg: [1070, 252], txt: [8, 53, 2]}
+- Washington: {jpg: [1080, 359], txt: [11, 53, 2]}
+- Raleigh: {jpg: [1011, 437], txt: [16, 51, 2]}
+- Charleston: {jpg: [1044, 514], txt: [20, 53, 2]}
+- Miami: {jpg: [1081, 699], txt: [24, 53, 2]}
