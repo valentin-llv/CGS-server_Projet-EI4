@@ -1,6 +1,9 @@
 logs
 
-**/**/bot
+games/**/bot
 **/**/dist
+
+**/**/*.pyc
+**/**/*.o
 
 **/**/valgrind-out.txt
