@@ -18,5 +18,6 @@ def createSocketServer(adress, port):
 		con, adr = server.accept()
 
 		# Create new thread for the user
-		threading.Thread(target = User(con).start, daemon = True).start()
+		User(con).start()
+		
 		logger.debug(f"New connection from {adr}, totaling to {threading.active_count() - 3} connections")

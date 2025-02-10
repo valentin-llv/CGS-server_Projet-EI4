@@ -26,3 +26,7 @@ class PollableQueue(queue.Queue):
     def get(self):
         self.getsocket.recv(1)
         return super().get()
+    
+    def __del__(self):
+        self.putsocket.close()
+        self.getsocket.close()

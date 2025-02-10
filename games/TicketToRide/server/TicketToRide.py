@@ -16,7 +16,7 @@ File: TicketToRide.py
 Copyright 2020 T. Hilaire
 """
 
-import sys, importlib, random, logging
+import sys, importlib
 
 # Add the CGS server directory to the path
 sys.path.append("../../../server/")
@@ -24,6 +24,8 @@ sys.path.append("../../../server/")
 # Import files
 Game = importlib.import_module("game.game").Game
 constants = importlib.import_module("game.constants")
+
+Bot = importlib.import_module("player.bot.bot").Bot
 
 # Assign constants
 NORMAL_MOVE = constants.NORMAL_MOVE
@@ -43,11 +45,12 @@ from Map import Map, longestPath
 from Cards import Deck, strCards
 from Constants import colorNames, tracksColors, MULTICOLOR, PURPLE, Scores, playerColors, checkChar
 
-regClaimRoute = compile(r"^\s*1\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)")   # regex to parse a "1 %d %d %d %d"
-regDrawBlindCard = compile(r"^\s*2")                                # regex to parse "2"
-regDrawCard = compile(r"^\s*3\s+(\d+)")                             # regex to parse "3 %d"
-regDrawObjectives = compile(r"^\s*4")                               # regex to parse "4"
-regChooseObjectives = compile(r"^\s*5\s+(\d+)\s+(\d+)\s+(\d+)")     # regex to parse "5 %d %d %d"
+class MoveNames:
+	CLAIM_ROUTE = "1"
+	DRAW_BLIND_CARD = "2"
+	DRAW_CARD = "3"
+	DRAW_OBJECTIVES = "4"
+	CHOOSE_OBJECTIVES = "5"
 
 class TicketToRide(Game):
 	"""
@@ -195,7 +198,7 @@ class TicketToRide(Game):
 				"\t\t Score: %3d \t Wagons: %2d \t Objectives: %d" %
 				(self._score[i], self._nbWagons[i], len(self._objectives[i]))
 			)
-			if self.players[i].isRegular and not self.players[1-i].isRegular:
+			if not isinstance(self.players[i], Bot) and isinstance(self.players[1-i], Bot):
 				scoreLines.append("\t\t Cards (%2d): " % sum(self._cards[i]))
 				for c, (name, color) in enumerate(zip(colorNames[1:], tracksColors[1:])):
 					scoreLines.append("\t\t\t - (%d) %10s:%s" % (c+1, name, strCards(c+1, self._cards[i][c+1])))
@@ -222,40 +225,21 @@ class TicketToRide(Game):
 		"""
 		# reset move action
 		self._lastMoveWeb = {}
+
 		# parse for the different moves
-		claimRoute = regClaimRoute.match(move)
-		drawBlindCard = regDrawBlindCard.match(move)
-		drawCard = regDrawCard.match(move)
-		drawObjectives = regDrawObjectives.match(move)
-		chooseObjectives = regChooseObjectives.match(move)
-		# if the last move was drawObjectives, then this move MUST be chooseObjectives
-		if self._objDrawn and not chooseObjectives:
-			return LOSING_MOVE, "a `draw objectives` move must be followed by a `choose objectives` move"
-		# if the last move was drawCard and the card was not a Locomotive, then this move MUST be drawCard or drawBlindCard
-		if self._shouldTakeAnotherCard and not (drawCard or drawBlindCard):
-			return LOSING_MOVE, "a `draw card` or `draw blind card` must be followed by a `draw card` " \
-			                    "or `draw blind card` (except for Locomotive taken face up)"
-		# the 1st move MUST be chooseObjectives
-		if self._firstMove[self.whoPlays] and not drawObjectives:
-			return LOSING_MOVE, "The 1st move MUST be a `draw objective` move!"
-		# Claim a route
-		if claimRoute:
-			answer = self._claimRoute(claimRoute)
-		# Draw a blind card
-		elif drawBlindCard:
-			answer = self._drawBlindCard()
-		# Draw a train card
-		elif drawCard:
-			answer = self._drawCard(drawCard)
-		# Draw an objective card
-		elif drawObjectives:
-			answer = self._drawObjectives()
-		# Choose an objective card
-		elif chooseObjectives:
-			answer = self._chooseObjectives(chooseObjectives)
-		# otherwise, an incorrect move
-		else:
-			return LOSING_MOVE, "The move is not in correct !"
+		match move["move"]:
+			case MoveNames.CLAIM_ROUTE:
+				answer = self._claimRoute(move)
+			case MoveNames.DRAW_BLIND_CARD:
+				answer = self._drawBlindCard()
+			case MoveNames.DRAW_CARD:
+				answer = self._drawCard(move)
+			case MoveNames.DRAW_OBJECTIVES:
+				answer = self._drawObjectives()
+			case MoveNames.CHOOSE_OBJECTIVES:
+				answer = self._chooseObjectives(move)
+			case _:
+				return LOSING_MOVE, "The move is not correct!"
 
 		# end of the 1st round
 		self._firstMove[self.whoPlays] = False

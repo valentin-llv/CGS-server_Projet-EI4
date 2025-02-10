@@ -65,4 +65,4 @@ def error(self: Logger, msg: str, *args, **kws):
 
     if self.isEnabledFor(40):
         self._log(40, msg, args, **kws)
-        sys.exit(0)
+        sys.exit()

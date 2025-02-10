@@ -1,5 +1,10 @@
 {
     "files.associations": {
-        "json.h": "c"
+        "*.css": "tailwindcss",
+        "json.h": "c",
+        "snake.h": "c",
+        "stdio.h": "c",
+        "stdlib.h": "c",
+        "api.h": "c"
     }
 }

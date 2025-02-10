@@ -104,7 +104,7 @@ typedef struct{
 		t_drawObjectives drawObjectives;
 		t_chooseObjectives chooseObjectives;
 	};
-} t_move;
+}  t_move;
 
 
 /* -------------------------------------

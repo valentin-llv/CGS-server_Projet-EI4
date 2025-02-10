@@ -2,7 +2,7 @@
 
     API for the Coding Game Server
 
-    Require api.h and json.h
+    Require api.h, json.h ang [game name].h
 
 */
 
@@ -24,23 +24,23 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#include "json.h"
+// External JSON library
+#include "lib/json.h"
+
+// Game headers
+#include "gamesHeaders/ticketToRide.h"
+
+// API base headers
 #include "api.h"
 
 /*
 
-    Constants
+    Default values for struct
 
 */
 
-static const unsigned char MAX_DIFFICULTY = 3;
-static const unsigned int MAX_TIMEOUT = 300;
-static const unsigned int MAX_SEED = 10000;
-
-// Used to set defaults values to struct
-const GameSettings GameSettingsDefaults = {TRAINNING, RANDOM_PLAYER, 0, 60, 0, 0, 0};
-const GameData GameDataDefaults = {"", 0, 0, 0, 0, 0, 0};
-const MoveData MoveDataDefaults = {0, 0, "", ""};
+const GameSettings GameSettingsDefaults = { TRAINNING, RANDOM_PLAYER, 0, 60, 0, 0, 0 };
+const GameData GameDataDefaults = { "", 0, 0, 0, 0, 0, 0 };
 
 /*
 
@@ -48,7 +48,7 @@ const MoveData MoveDataDefaults = {0, 0, "", ""};
 
 */
 
-static int SOCKET;
+int SOCKET;
 
 /*
 
@@ -56,64 +56,64 @@ static int SOCKET;
 
 */
 
-int connectToCGS(char* adress, unsigned int port) {
-    if(!isValidIpAddress(adress)) return 0x10;
-    if(!port) return 0x10;
+ResultCode connectToCGS(char* adress, unsigned int port) {
+    if(!isValidIpAddress(adress)) return PARAM_ERROR;
+    if(!port) return PARAM_ERROR;
 
     return connectToSocket(adress, port);
 }
 
-int sendName(char* name) {
-    // Check user provided data
-    if(strlen(name) >= 90) return 0x10;
+ResultCode sendName(char* name) {
+    // Check user's provided data
+    if(strlen(name) >= 90) return PARAM_ERROR;
 
     // Parse data into json string
     char* data = (char *) malloc(100 * sizeof(char));
     int dataLenght = sprintf(data, "{ 'name': '%s' }", name);
 
     // Send data and check for succes
-    if(!sendData(data, dataLenght)) return 0;
+    if(!sendData(data, dataLenght)) return SERVER_ERROR;
     free(data);
     
     // Get server acknowledgement
     char* string; int* stringLength = (int *) malloc(sizeof(int));
     jsmntok_t* tokens = (jsmntok_t *) malloc(5 * sizeof(jsmntok_t));
 
-    if(!getServerResponse(&string, stringLength, tokens, 5)) return 0x20;
+    if(!getServerResponse(&string, stringLength, tokens, 5)) return SERVER_ERROR;
 
     free(string);
     free(stringLength);
     free(tokens);
 
     // Return succes
-    return 0x40;
+    return ALL_GOOD;
 }
 
-int sendGameSettings(GameSettings gameSettings, GameData* gameData) {
-    // Check user provided data
-    if(gameSettings.gameType >= GamesTypesMax) return 0x10;
-    if(gameSettings.botName >= BotsNamesMax) return 0x10;
+ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
+    // Check user's provided data
+    if(gameSettings.gameType >= GamesTypesMax || gameSettings.gameType < 0) return PARAM_ERROR;
+    if(gameSettings.botId >= BotsNamesMax || gameSettings.botId < 0) return PARAM_ERROR;
 
-    if(gameSettings.difficulty > MAX_DIFFICULTY) return 0x10;
-    if(gameSettings.timeout > MAX_TIMEOUT) return 0x10;
+    if(gameSettings.difficulty > GameDifficultyMax || gameSettings.difficulty < 0) return PARAM_ERROR;
+    if(gameSettings.timeout > MAX_TIMEOUT || gameSettings.timeout < MIN_TIMEOUT) return PARAM_ERROR;
 
-    if(gameSettings.start != 0 && gameSettings.start != 1 && gameSettings.start != 2) return 0x10;
-    if(gameSettings.seed > MAX_SEED) return 0x10;
+    if(gameSettings.starter != 0 && gameSettings.starter != 1 && gameSettings.starter != 2) return PARAM_ERROR;
+    if(gameSettings.seed > MAX_SEED || gameSettings.seed < 0) return PARAM_ERROR;
     
     // Parse data into json string
-    char* data = (char *) malloc(200 * sizeof(char));
-    int dataLenght = sprintf(data, "{ 'gameType': '%d', 'botName': '%d', 'difficulty': '%d', 'timeout': '%d', 'start': '%d', 'seed': '%d', 'reconnect': '%d'}",
-    gameSettings.gameType, gameSettings.botName, gameSettings.difficulty, gameSettings.timeout, gameSettings.start, gameSettings.seed, gameSettings.reconnect);
+    char* data = (char *) malloc(250 * sizeof(char));
+    int dataLenght = sprintf(data, "{ 'gameType': '%d', 'botId': '%d', 'difficulty': '%d', 'timeout': '%d', 'start': '%d', 'seed': '%d', 'reconnect': '%d'}",
+    gameSettings.gameType, gameSettings.botId, gameSettings.difficulty, gameSettings.timeout, gameSettings.starter, gameSettings.seed, gameSettings.reconnect);
 
     // Send data and check for succes
-    if(!sendData(data, dataLenght)) return 0x20;
+    if(!sendData(data, dataLenght)) return SERVER_ERROR;
     free(data);
 
     // Get server acknowledgement
     char* string; int* stringLength = (int *) malloc(sizeof(int));
     jsmntok_t* tokens = (jsmntok_t *) malloc(19 * sizeof(jsmntok_t));
 
-    if(!getServerResponse(&string, stringLength, tokens, 19)) return 0x20;
+    if(!getServerResponse(&string, stringLength, tokens, 19)) return SERVER_ERROR;
 
     // Set struct from param to defaults values
     *gameData = GameDataDefaults;
@@ -124,121 +124,142 @@ int sendGameSettings(GameSettings gameSettings, GameData* gameData) {
     sprintf(gameName, "%.*s", blockLength - 1, &string[tokens[4].start]);
     gameData->gameName = gameName;
 
-    gameData->firstPlayer = atoi(&string[tokens[6].start]);
+    // Data is in specific order
+    gameData->starter = atoi(&string[tokens[6].start]);
     gameData->gameSeed = atoi(&string[tokens[8].start]);
-    gameData->boardX = atoi(&string[tokens[10].start]);
-    gameData->boardY = atoi(&string[tokens[12].start]);
-    gameData->nbWalls = atoi(&string[tokens[14].start]);
+    gameData->boardWidth = atoi(&string[tokens[10].start]);
+    gameData->boardHeight = atoi(&string[tokens[12].start]);
+    gameData->nbElements = atoi(&string[tokens[14].start]);
 
     int blockLength2 = tokens[16].end - tokens[16].start + 1;
-    int* map = (int *) malloc(blockLength2 * sizeof(int));
+    int* boardData = (int *) malloc(blockLength2 * sizeof(int));
 
     int i = 0; int j = 0;
     while((j + i) < blockLength2 - 1) {
-        map[i] = atoi(&string[tokens[16].start + j + i]);
+        boardData[i] = atoi(&string[tokens[16].start + j + i]);
 
-        j = j + getIntegerLength(map[i]);
+        j = j + getIntegerLength(boardData[i]);
         i ++;
     }
-    gameData->map = map;
+    gameData->boardData = boardData;
 
     free(string);
     free(stringLength);
     free(tokens);
 
     // Return succes
-    return 0x40;
+    return ALL_GOOD;
 }
 
-int getMove(MoveData *moveData) {
+ResultCode getMove(MoveData* moveData, MoveResult* moveResult) {
     // Parse data into json string
     char* data = "{ 'action': 'getMove' }";
 
-    // Send data and check for succes
-    if(!sendData(data, strlen(data))) return 0x20;
+    // Send data and check for success
+    if(!sendData(data, strlen(data))) return SERVER_ERROR;
 
     // Get server acknowledgement
     char* string; int* stringLength = (int *) malloc(sizeof(int));
     jsmntok_t* tokens = (jsmntok_t *) malloc(11 * sizeof(jsmntok_t));
 
-    if(!getServerResponse(&string, stringLength, tokens, 9)) return 0x20;
+    if(!getServerResponse(&string, stringLength, tokens, 9)) return SERVER_ERROR;
 
-    // Load recieved data into struct
-    moveData->action = atoi(&string[tokens[4].start]);
-    moveData->direction = atoi(&string[tokens[6].start]);
-
-    int blockLength = tokens[8].end - tokens[8].start + 1;
-    char* opponentMessage = (char *) malloc(blockLength * sizeof(char));
-    sprintf(opponentMessage, "%.*s", blockLength - 1, &string[tokens[8].start]);
-    moveData->opponentMessage = opponentMessage;
-
-    int blockLength2 = tokens[10].end - tokens[10].start + 1;
-    char* message = (char *) malloc(blockLength2 * sizeof(char));
-    sprintf(message, "%.*s", blockLength2 - 1, &string[tokens[10].start]);
-    moveData->message = message;
+    // Call the function related to the selected game to properly unpack the data
+    unpackGetMoveData(string, tokens, moveData, moveResult);
 
     free(string);
     free(stringLength);
     free(tokens);
 
-    // Return succes
-    return 0x40;
+    // Return success
+    return ALL_GOOD;
 }
 
-int sendMove(unsigned int move, int* moveType) {
-    if(move >= MovesMax) return 0x10;
-
+ResultCode sendMove(MoveData* moveData, MoveResult* moveResult) {
     // Parse data into json string
-    char* data = (char *) malloc(200 * sizeof(char));
-    int dataLenght = sprintf(data, "{ 'action': 'sendMove', 'move': %d }", move);
+    char* data = (char *) malloc(PACKED_DATA_MAX_SIZE * sizeof(char));
 
-    // Send data and check for succes
-    if(!sendData(data, strlen(data))) return 0x20;
+    printf("Before pack\n");
+
+    // Call the function related to the selected game to properly pack the data
+    int dataLength = packSendMoveData(data, moveData);
+
+    printf("After pack\n");
+
+    // Send data and check for success
+    if(!sendData(data, dataLength)) return SERVER_ERROR;
     free(data);
+
+    printf("Data sent\n");
 
     // Get server acknowledgement
     char* string; int* stringLength = (int *) malloc(sizeof(int));
     jsmntok_t* tokens = (jsmntok_t *) malloc(9 * sizeof(jsmntok_t));
 
-    if(!getServerResponse(&string, stringLength, tokens, 9)) return 0x20;
+    printf("Before get response\n");
 
-    // Load recieved data into struct
-    *moveType = atoi(&string[tokens[4].start]);
+    if(!getServerResponse(&string, stringLength, tokens, 9)) return SERVER_ERROR;
+
+    printf("After get response\n");
+
+    // If returnCode is NORMAL_MOVE, unpack the data
+    if(moveResult->action == NORMAL_MOVE) unpackSendMoveResult(string, tokens, moveResult);
+
+    printf("After unpack\n");
 
     free(string);
     free(stringLength);
     free(tokens);
 
-    // Return succes
-    return 0x40;
+    // Return success
+    return ALL_GOOD;
 }
 
-int sendMessage() {
-    // TODO
+ResultCode sendMessage(char* message) {
+    // Check user's provided data
+    if(strlen(message) >= 256) return PARAM_ERROR;
 
-    // Return succes
-    return 0x40;
-}
-
-int printBoard() {
     // Parse data into json string
-    char* data = "{ 'action': 'displayGame' }";
+    char* data = (char *) malloc(300 * sizeof(char));
+    int dataLength = sprintf(data, "{ 'message': '%s' }", message);
 
-    // Send data and check for succes
-    if(!sendData(data, strlen(data))) return 0x20;
+    // Send data and check for success
+    if(!sendData(data, dataLength)) return SERVER_ERROR;
+    free(data);
 
     // Get server acknowledgement
     char* string; int* stringLength = (int *) malloc(sizeof(int));
     jsmntok_t* tokens = (jsmntok_t *) malloc(5 * sizeof(jsmntok_t));
 
-    if(!getServerResponse(&string, stringLength, tokens, 5)) return 0x20;
+    if(!getServerResponse(&string, stringLength, tokens, 5)) return SERVER_ERROR;
+
+    free(string);
+    free(stringLength);
+    free(tokens);
+
+    // Return success
+    return ALL_GOOD;
+}
+
+ResultCode printBoard() {
+    // Parse data into json string
+    char* data = "{ 'action': 'displayGame' }";
+
+    // Send data and check for succes
+    if(!sendData(data, strlen(data))) return SERVER_ERROR;
+
+    // Get server acknowledgement
+    char* string; int* stringLength = (int *) malloc(sizeof(int));
+    jsmntok_t* tokens = (jsmntok_t *) malloc(5 * sizeof(jsmntok_t));
+
+    if(!getServerResponse(&string, stringLength, tokens, 5)) return SERVER_ERROR;
 
     int blockLength = atoi(&string[tokens[4].start]) + 1;
     char buffer[blockLength];
     memset(buffer, 0, (blockLength) * sizeof(char));
 
     int res = read(SOCKET, buffer, blockLength - 1);
-    if(res == -1) return 0x20;
+    if(res == -1) return SERVER_ERROR;
 
     printf("%s\n\n", buffer);
 
@@ -247,28 +268,28 @@ int printBoard() {
     free(tokens);
 
     // Return succes
-    return 0x40;
+    return ALL_GOOD;
 }
 
-int quitGame() {
+ResultCode quitGame() {
     // Parse data into json string
     char* data = "{ 'action': 'quitGame' }";
 
     // Send data and check for succes
-    if(!sendData(data, strlen(data))) return 0x20;
+    if(!sendData(data, strlen(data))) return SERVER_ERROR;
 
     // Get server acknowledgement
     char* string; int* stringLength = (int *) malloc(sizeof(int));
     jsmntok_t* tokens = (jsmntok_t *) malloc(5 * sizeof(jsmntok_t));
 
-    if(!getServerResponse(&string, stringLength, tokens, 5)) return 0x20;
+    if(!getServerResponse(&string, stringLength, tokens, 5)) return SERVER_ERROR;
 
     free(string);
     free(stringLength);
     free(tokens);
 
     // Return succes
-    return 0x40;
+    return ALL_GOOD;
 }
 
 /*
@@ -301,6 +322,7 @@ static int connectToSocket(char* adress, unsigned int port) {
         printf("\x1b[1;31mInvalid address or address not supported\x1b[0m\n");
         return 0x10;
     }
+
 
     int status = connect(soc, (struct sockaddr*) &serv_addr, sizeof(serv_addr));
     if (status < 0) {
@@ -349,6 +371,8 @@ static int getServerResponse(char** string, int* stringLength, jsmntok_t* tokens
 
     // Get state infos
     int state = atoi(&(*string)[tokens[2].start]);
+
+    printf("State: %d\n", state);
     
     // Print error if needed
     if(!state) {
@@ -356,6 +380,8 @@ static int getServerResponse(char** string, int* stringLength, jsmntok_t* tokens
         printf("\x1b[1;31mServer responded with following error:\x1b[0m \x1b[3m%.*s\x1b[23m\n", blockLength, (*string + tokens[4].start));
         return 0;
     }
+
+    printf("Server response: %s\n", *string);
 
     // Return succes
     return 1;

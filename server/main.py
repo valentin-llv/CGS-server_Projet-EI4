@@ -16,7 +16,10 @@ from user.user import User
 
 from gamesManager.gamesManager import GamesManager
 
+from utils.memoryAnalyser import simpleMemoryVisualiser
+
 def main():
+	# Parse command line arguments
 	args = parseCmdArgs()
 	executeArgs(args)
 
@@ -51,30 +54,31 @@ def main():
 	# Enter in a loop to keep the server running and register the commands
 	loop()
 
+commandsActionsDict = {
+	"listAvailablesGames": GameRef.listGames,
+
+	"listThreads": lambda: print(threading.enumerate()),
+
+	"listUsers": User.listUsers,
+	"listGames": GamesManager.getInstance().listRunningGames,
+	"listBots": GameRef.listAvailableBots,
+
+	"analyzeMemory": simpleMemoryVisualiser,
+
+	"exit": exit,
+}
+
+def printHelp():
+	print("Available commands are:")
+	for command in commandsActionsDict: print("-", command)
+
 def loop():
 	while True:
 		command = input("")
-
-		# Available commands are: exit, listGames, listUsers, listRunningGames, listThreads, help, listAvailableBots, analyzeMemory
-		if command == "exit":
-			break
-		elif command == "listGames":
-			GameRef.listGames()
-		elif command == "listUsers":
-			User.listUsers()
-		elif command == "listRunningGames":
-			GamesManager.getInstance().listRunningGames()
-		elif command == "listThreads":
-			print(threading.enumerate())
-		elif command == "help":
-			print("Available commands are: exit, listGames, listUsers, listRunningGames, listThreads, help")
-		elif command == "listAvailableBots":
-			GameRef.listAvailableBots()
-		elif command == "analyzeMemory":
-			import objgraph # Required to be installed and Graphviz to be installed
-			objgraph.show_backrefs(GamesManager, filename='../sample-backref-graph.png')
-		else:
-			print("Command not found")
+		
+		if command in commandsActionsDict: commandsActionsDict[command]()
+		elif command == "help": printHelp()
+		else: print("Command not found, type 'help' to see available commands")
 
 		print(">> ", end = "")
 

@@ -62,10 +62,10 @@ class GamesManager:
         match int(gameSettings["gameType"]):
             case gameTypes.TRAINING:
                 # Create new game session in training mode, need bot name
-                try: bot = GameRef.game.BOTS[int(gameSettings["botName"])]() # Instantiate bot
+                try: bot = GameRef.game.BOTS[int(gameSettings["botId"])]() # Instantiate bot
                 except KeyError: raise InvalidBotName()
                 
-                botName = gameSettings["botName"]
+                botName = gameSettings["botId"]
                 self.logger.message(f"Arrived in trainning with selected bot {botName}")
 
                 # In training mode, user can choose who starts

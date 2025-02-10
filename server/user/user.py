@@ -1,4 +1,4 @@
-import sys, json, socket as SocketType, logging, select
+import json, socket as SocketType, logging, select, threading, sys
 
 from user.exceptions import *
 
@@ -15,7 +15,7 @@ class StateMachine:
 	WAIT_FOR_GAME_SETTINGS = 1
 	PLAYING_GAME = 2
 
-class User(Player):
+class User(Player, threading.Thread):
 	users = []
 	uidsCounter = 0
 
@@ -27,6 +27,9 @@ class User(Player):
 	def __init__(self, socket: SocketType):
 		# Init parent class Player
 		Player.__init__(self)
+
+		threading.Thread.__init__(self)
+		self.setDaemon(True)
 
 		# Store ref of each user and assign unique id
 		User.users.append(self)
@@ -47,10 +50,10 @@ class User(Player):
 
 		self.waitingToReconnect = False
 
-	def start(self):
+	def run(self):
 		try: self.loop()
 		except SocketClosedException: # Handle user disconnection
-			logging.getLogger().message(f"User {self.name} has been disconnected")
+			self.logger.message(f"User {self.name} has been disconnected")
 
 			# If user is in a game, notify the game that the player has been disconnected, he will have x seconds to reconnect
 			if self.game:
@@ -189,29 +192,29 @@ class User(Player):
 		if not "gameType" in gameSettings: raise UserDidNotSendGameSettings(self.sendMsg, self.name)
 
 		# If player already in a game, remove him from the game
-		if self.game: self.game.playerQuitGame(self)
+		# if self.game: self.game.playerQuitGame(self) # TODO
 
 		GamesManager.event("registerPlayer", { "user": self, "gameSettings": gameSettings })
 
-	def userPlay(self, message):
+	def userPlay(self, actionData):
 		# State 2: User is playing, send move, get move, display game, quit game ...
-		if not "action" in message: raise UserSentInvalidInstruction(self.sendMsg, self.name)
+		if not "action" in actionData: raise UserSentInvalidInstruction(self.sendMsg, self.name)
 
-		match message["action"]:
+		match actionData["action"]:
 			case "getMove": # User ask for latest opponent move
 				# Check if it's user turn, if it is this action is not available
 				if self.game.players[self.game.whoPlays] == self: raise UserSentWrongActionDuringHisTurn(self.sendMsg, self.name)
 
-				self.game.event("getMove", { "player": self })
+				self.game.event("getMove", { "player": self, "actionData": actionData["action"] })
 
 			case "sendMove": # User send move to the game
-				if not "move" in message and not message["move"]: raise UserSentInvalidMove(self.sendMsg, self.name)
+				if not "move" in actionData and not actionData["move"]: raise UserSentInvalidMove(self.sendMsg, self.name)
 				
 				# Check if it's user turn, if it is not this action is not available
 				if self.game.players[self.game.whoPlays] != self: raise UserSentWrongActionDuringOpponentTurn(self.sendMsg, self.name)
 				
 				# Send move to the game
-				self.game.event("sendMove", { "player": self, "move": message["move"] })
+				self.game.event("sendMove", { "player": self, "move": actionData["move"] })
 
 			case "displayGame":
 				board = str(self.game).encode()
@@ -223,7 +226,7 @@ class User(Player):
 
 			case "quitGame":
 				if self.game: 
-					self.game.playerQuitGame(self)
+					# self.game.playerQuitGame(self) # TODO
 					self.game = None
 				self.sendMsg({ "state": 1 })
 
@@ -238,12 +241,17 @@ class User(Player):
 
 	def destroy(self):
 		super().destroy()
-
-		self.game = None
 		User.users.remove(self)
 
+		self.game = None
+
 		self.socket.close()
-		exit()
+		self.socket = None
+
+		self.queue.queue.clear()
+		self.queue = None
+
+		sys.exit()
 
 	def __del__(self):
-		self.logger.debug("User object instance have been garbage collected")
+		logging.getLogger().debug("User object instance have been garbage collected")

@@ -1,8 +1,7 @@
 from __future__ import annotations
-import sys
 from typing import TYPE_CHECKING
 
-import random, logging, threading
+import random, logging, threading, sys
 from threading import Timer
 from queue import Queue
 
@@ -19,6 +18,7 @@ from game.constants import DEFAULT_DIFFICULTY, TURN_TIMEOUT_DEFAULT
 class Game(threading.Thread):
     def __init__(self, player1: Player, player2: Player, id: int, **options):
         threading.Thread.__init__(self)
+        self.setDaemon(True)
 
         self.id = id
 
@@ -51,8 +51,8 @@ class Game(threading.Thread):
             if event == "getMove" or event == "sendMove" or event == "sendComment":
                 if self.active:
                     if event == "getMove": self.getMove(data["player"])
-                    elif event == "sendMove": self.sendMove(data["player"], data["move"])
-                    elif event == "sendComment": self.sendComment(data["player"], data["comment"])
+                    elif event == "sendMove": self.sendMove(data["player"], data)
+                    elif event == "sendComment": self.sendComment(data["player"], data["comment"]) # TODO
                 else: data["player"].event("gameEnded", { "winner": self.winner })
             elif event == "playerDisconnected": self.playerDisconnected(data["player"])
             elif event == "reconnectPlayer": self.reconnectPlayer(data["player"], data["index"])
@@ -76,8 +76,8 @@ class Game(threading.Thread):
             # TODO Real player
             pass
 
-    def sendMove(self, player, move):
-        returnCode, message = self.updateGame(str(move))
+    def sendMove(self, player, moveData):
+        returnCode, message = self.updateGame(moveData)
         player.event("sendMoveResponse", { "returnCode": returnCode, "message": message })
 
         self.nextPlayerTurn()
@@ -109,31 +109,23 @@ class Game(threading.Thread):
         self.whoPlays = 1 if self.whoPlays == 0 else 0
 
     def playerQuitGame(self, player):
+        self.active = False
+
         # Remove player from game
         self.players.remove(player)
 
         # If other players are bots, destroy them and close game
-        if not self.remaininPlayer():
-            for p in self.players: p.destroy()
-            
-            self.winner = None
-            self.players = []
-            self.timers = []
-            self.queue = None
-
-            GamesManager.getInstance().deleteGame(self)
-            exit()
+        if not self.remaininPlayer(): self.destroy()
 
     def playerDisconnected(self, player):
         # Timeout to wait for player to reconnect
         timer = Timer(2, self.reconnectTimeout, (player, ))
+        timer.setDaemon(True)
         timer.start()
 
         self.timers.append({ "player": player, "timer": timer })
 
-    def reconnectTimeout(self, player):
-        self.active = False
-        
+    def reconnectTimeout(self, player):        
         self.deleteTimer(player)
         self.playerQuitGame(player)
 
@@ -155,8 +147,27 @@ class Game(threading.Thread):
         for t in self.timers:
             if t["player"] == player:
                 t["timer"].cancel()
-                del t
+                self.timers.remove(t)
                 break
 
+    def destroy(self):
+        for p in self.players: p.destroy()
+        self.players = None
+        
+        self.winner = None
+        
+        for t in self.timers: 
+            t["timer"].cancel()
+            t["timer"] = None
+            t["player"] = None
+
+        self.queue.queue.clear()
+        self.queue = None
+
+        self.active = False
+
+        GamesManager.getInstance().deleteGame(self)
+        sys.exit()
+
     def __del__(self):
-        logging.getLogger().message("Game object instance have been garbage collected")
+        logging.getLogger().debug("Game object instance have been garbage collected")
