@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 // Socket headers
 // Those libs are available on Linux (including WSL) and Mac but not Windows
@@ -26,6 +27,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 
 // External JSON library
 #include "lib/json.h"
@@ -68,10 +70,46 @@ int SOCKET;
 // This is a blocking function, it will wait until the connection is established, it may take some time.
 
 ResultCode connectToCGS(char* adress, unsigned int port) {
-    if(!isValidIpAddress(adress)) return PARAM_ERROR;
     if(!port) return PARAM_ERROR;
 
-    return connectToSocket(adress, port);
+    char* ipAdress = NULL;
+
+    if(!isValidIpAddress(adress)) {
+        // printf("\x1b[1;33mResolving domain name %s\x1b[0m\n", adress);
+
+        // Do a DNS search to resolve domain name
+        struct addrinfo* dnsResult = NULL;
+        int result = getaddrinfo(adress, 0, 0, &dnsResult);
+
+        if(result != 0) {
+            printf("\x1b[1;31mDNS search failed\x1b[0m\n");
+            return OTHER_ERROR;
+        }
+
+        int adrSize = dnsResult->ai_addr->sa_family == AF_INET ? INET_ADDRSTRLEN : INET6_ADDRSTRLEN;
+        ipAdress = (char *) malloc(adrSize * sizeof(char));
+
+        // Check if IPV4 or IPV6 adress found        
+        if(dnsResult->ai_addr->sa_family == AF_INET) { // IPV4 adress found
+            struct sockaddr_in *p = (struct sockaddr_in *) dnsResult->ai_addr;
+            inet_ntop(AF_INET, &p->sin_addr, ipAdress, adrSize);
+        } else if (dnsResult->ai_addr->sa_family == AF_INET6) { // IPV6 adress found
+            struct sockaddr_in6 *p = (struct sockaddr_in6 *) dnsResult->ai_addr;
+            inet_ntop(AF_INET6, &p->sin6_addr, ipAdress, adrSize);
+        }
+
+        // Print that the domain name have resolve into an adress
+        printf("\x1b[1;32mDomain name %s resolved into IP adress %s\x1b[0m\n", adress, ipAdress);
+
+        adress = ipAdress;
+        freeaddrinfo(dnsResult);
+    }
+
+    ResultCode result = connectToSocket(adress, port);
+
+    if(ipAdress != NULL) free(ipAdress);
+
+    return result;
 }
 
 // After connecting to the server you need to send your name to the server. It will be used to uniquely identify you.
@@ -245,13 +283,19 @@ ResultCode sendMove(MoveData* moveData, MoveResult* moveResult) {
     // Check if pack failed
     if(dataLength == -1) return OTHER_ERROR;
 
+    printf("Data: %s\n", data);
+
     // Send data and check for success
     if(!sendData(data, dataLength)) return SERVER_ERROR;
     free(data);
 
+    printf("Data sent\n");
+
     // Get server acknowledgement
     char* string; int* stringLength = (int *) malloc(sizeof(int));
     jsmntok_t* tokens = (jsmntok_t *) malloc(33 * sizeof(jsmntok_t));
+
+    printf("Waiting for data\n");
 
     // Check if malloc failed
     if(stringLength == NULL) return MEMORY_ALLOCATION_ERROR;
@@ -259,10 +303,14 @@ ResultCode sendMove(MoveData* moveData, MoveResult* moveResult) {
 
     if(!getServerResponse(&string, stringLength, tokens, 33)) return SERVER_ERROR;
 
+    printf("Data recieved\n");
+
     moveResult->state = atoi(&string[tokens[2].start]);
 
     // If returnCode is NORMAL_MOVE, unpack the data
     if(moveResult->state == NORMAL_MOVE) {
+        printf("Unpacking data\n");
+
         int result = unpackSendMoveResult(string, tokens, moveResult);
         if(result == -1) return OTHER_ERROR;
     }
@@ -319,7 +367,7 @@ ResultCode printBoard() {
     // Parse data into json string
     char* data = "{ 'action': 'displayGame' }";
 
-    // Send data and check for succes
+    // Send data and check for success
     if(!sendData(data, strlen(data))) return SERVER_ERROR;
 
     // Get server acknowledgement
@@ -333,19 +381,25 @@ ResultCode printBoard() {
     if(!getServerResponse(&string, stringLength, tokens, 5)) return SERVER_ERROR;
 
     int blockLength = atoi(&string[tokens[4].start]) + 1;
-    char buffer[blockLength];
-    memset(buffer, 0, (blockLength) * sizeof(char));
+    char* buffer = (char *) malloc(blockLength * sizeof(char));
+    memset(buffer, 0, blockLength * sizeof(char));
 
-    int res = read(SOCKET, buffer, blockLength - 1);
-    if(res == -1) return SERVER_ERROR;
+    // Read new incoming message on the socket wire
+    int totalRead = 0;
+    while (totalRead < blockLength - 1) {
+        int res = read(SOCKET, buffer + totalRead, blockLength - 1 - totalRead);
+        if (res <= 0) return SERVER_ERROR; // Ensure it reads the correct amount of data
+        totalRead += res;
+    }
 
     printf("%s\n", buffer);
 
+    free(buffer);
     free(string);
     free(stringLength);
     free(tokens);
 
-    // Return succes
+    // Return success
     return ALL_GOOD;
 }
 
@@ -405,10 +459,14 @@ static ResultCode connectToSocket(char* adress, unsigned int port) {
     serv_addr.sin_port = htons(port);
 
     int res = inet_pton(AF_INET, adress, &serv_addr.sin_addr);
+    if (res <= 0) {
+        printf("\x1b[1;31mInvalid address / address not supported\x1b[0m\n");
+        return OTHER_ERROR;
+    }
 
     int status = connect(soc, (struct sockaddr*) &serv_addr, sizeof(serv_addr));
     if (status < 0) {
-        printf("\x1b[1;31mConnection to server failed\x1b[0m\n");
+        printf("\x1b[1;31mConnection to server failed\x1b[0m: %s [code = %d]\n", strerror(errno), errno);
         return SERVER_ERROR;
     }
 
@@ -446,6 +504,8 @@ static int sendData(char* data, unsigned int dataLenght) {
 static int getServerResponse(char** string, int* stringLength, jsmntok_t* tokens, int nbTokens) {
     // Get data
     if(!getData(string, stringLength)) return -1;
+
+    printf("Data: %s\n", *string);
     
     // Instanciate json parser
     jsmn_parser parser;
@@ -472,30 +532,51 @@ static int getData(char** string, int* stringLength) {
     // Allocate buffer to store data from read
     char buffer[FIRST_MSG_LENGTH] = { 0 };
 
+    printf("test 1\n");
+
     // Read incoming data on socket wire
     int res = read(SOCKET, buffer, FIRST_MSG_LENGTH - 1);
-    if(res == -1) return -1;
+    if(res <= 0) return -1; // Ensure it reads the correct amount of data
+
+    printf("test 2\n");
+
+    printf("Buffer: %s\n", buffer);
 
     // First message contain the length of the next one
     *stringLength = atoi(buffer) + 1;
 
+    // Printf string length
+    printf("String length: %d\n", *stringLength);
+
     // Allocate buffer of 0 based on the next message length
-    char buffer2[*stringLength];
+    char* buffer2 = (char *) malloc(*stringLength * sizeof(char));
     memset(buffer2, 0, (*stringLength) * sizeof(char));
 
-    // Read new incomming message on the socket wire
-    int res2 = read(SOCKET, buffer2, *stringLength - 1);
-    if(res2 == -1) return -1;
+    printf("test 3\n");
+
+    // Read new incoming message on the socket wire
+    int totalRead = 0;
+    while (totalRead < *stringLength - 1) {
+        int res2 = read(SOCKET, buffer2 + totalRead, *stringLength - 1 - totalRead);
+        if (res2 <= 0) return -1; // Ensure it reads the correct amount of data
+        totalRead += res2;
+    }
+
+    printf("test 4\n");
     
-    // Copy recieved data to **string param to effectivly return the recieved string
+    // Copy received data to **string param to effectively return the received string
     *string = (char *) malloc(*stringLength * sizeof(char));
+
+    printf("test 5\n");
 
     // Check if malloc failed
     if(*string == NULL) return -1;
 
     strcpy(*string, buffer2);
 
-    // Return succes
+    printf("test 6\n");
+
+    // Return success
     return 1;
 }
 
@@ -517,7 +598,7 @@ static int isValidIpAddress(char *ipAddress) {
     int result = inet_pton(AF_INET, ipAddress, &(sa.sin_addr));
 
     if(result == 0) {
-        printf("\x1b[1;31mInvalid IP address\x1b[0m\n");
+        // printf("\x1b[1;31mInvalid IP address\x1b[0m\n");
         return 0;
     } else if(result == -1) {
         printf("\x1b[1;31mAddress not supported\x1b[0m\n");

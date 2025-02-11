@@ -5,7 +5,8 @@
 #include "../../../client/src/api.h"
 
 int main() {
-    if(!connectToCGS("192.168.1.7", 8090)) return 1;
+    // cgs.valentin-lelievre.com
+    if(!connectToCGS("cgs.valentin-lelievre.com", 15001)) return 1;
     if(!sendName("test")) return 1;
 
     while(1) {
@@ -16,7 +17,7 @@ int main() {
         gameSettings.botId = RANDOM_PLAYER;
         gameSettings.difficulty = 1;
         gameSettings.timeout = 15;
-        gameSettings.starter = 1;
+        gameSettings.starter = 2;
         gameSettings.seed = 0;
         gameSettings.reconnect = 0;
 
@@ -101,6 +102,8 @@ int main() {
                     default:
                         break;
                 }
+
+                printf("test\n");   
 
                 MoveResult moveResult;
                 if(sendMove(&moveData, &moveResult) != ALL_GOOD) break;
