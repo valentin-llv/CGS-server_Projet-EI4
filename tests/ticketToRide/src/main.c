@@ -14,49 +14,59 @@ int main() {
         GameSettings gameSettings = GameSettingsDefaults;
         gameSettings.gameType = TRAINNING;
         gameSettings.botId = RANDOM_PLAYER;
-        gameSettings.starter = 2;
-        gameSettings.seed = 2002; // Seeds 2002 and 2003 are good seeds
         gameSettings.difficulty = 1;
+        gameSettings.timeout = 15;
+        gameSettings.starter = 1;
+        gameSettings.seed = 0;
         gameSettings.reconnect = 0;
 
         GameData gameData = GameDataDefaults;
-        if(sendGameSettings(gameSettings, &gameData) != 0x40) {
-            printf("Error while creating game\n");
+        int result = sendGameSettings(gameSettings, &gameData);
+        if(result != ALL_GOOD) {
+            printf("Error while creating game, error code: %d\n", result);
 
-            free(gameData.gameName);
-            free(gameData.boardData);
             return 1;
         }
 
         printf("Game name: %s\n", gameData.gameName);
 
+        // Print all game data
+        printf("Game seed: %d\n", gameData.gameSeed);
+        printf("Board width: %d\n", gameData.boardWidth);
+        printf("Board height: %d\n", gameData.boardHeight);
+
         int whoPlays = gameData.starter;
-        srand(time(NULL));
+        printf("Starter: %d\n", whoPlays);
 
         while(1) {
             if(whoPlays == 1) {
+                printf("Waiting for opponent action\n");
+
                 MoveData moveData;
                 MoveResult moveResult;
-                if(getMove(&moveData, &moveResult) != 0x40) break;
+
+                if(getMove(&moveData, &moveResult) != ALL_GOOD) break;
 
                 printf("Opponent action: %d\n", moveData.action);
+
                 free(moveResult.opponentMessage);
                 free(moveResult.message);
 
-                if(moveResult.action != NORMAL_MOVE) {
+                if(moveResult.state != NORMAL_MOVE) {
                     printf("Opponent loose\n");
                     break;
                 }
 
-                whoPlays = 2;
+                whoPlays = 0;
             } else {
-                printBoard();
 
                 MoveData moveData;
-                // moveData.action = (Action)(rand() % 5 + 1); // Random action between 1 and 5
-                moveData.action = DRAW_CARD;
+                
+                // Ask user for action
+                printf("Enter action: (0: CLAIM_ROUTE, 1: DRAW_BLIND_CARD, 2: DRAW_CARD, 3: DRAW_OBJECTIVES, 4: CHOOSE_OBJECTIVES)\n");
+                scanf("%d", &moveData.action);
 
-                printf("We play action %d\n", moveData.action);
+                moveData.action ++;
 
                 switch (moveData.action) {
                     case CLAIM_ROUTE:
@@ -64,12 +74,18 @@ int main() {
                         moveData.claimRoute.to = rand() % 10;
                         moveData.claimRoute.color = (CardColor)(rand() % 9);
                         moveData.claimRoute.nbLocomotives = rand() % 3;
+
+                        printf("Claim route from %d to %d with color %d and %d locomotives\n", moveData.claimRoute.from, moveData.claimRoute.to, moveData.claimRoute.color, moveData.claimRoute.nbLocomotives);
+
                         break;
                     case DRAW_BLIND_CARD:
                         // No additional data needed
                         break;
                     case DRAW_CARD:
                         moveData.drawCard.card = (CardColor)(rand() % 5);
+
+                        printf("Draw card %d\n", moveData.drawCard.card);
+
                         break;
                     case DRAW_OBJECTIVES:
                         // No additional data needed
@@ -78,29 +94,51 @@ int main() {
                         moveData.chooseObjectve.selectCard[0] = rand() % 2;
                         moveData.chooseObjectve.selectCard[1] = rand() % 2;
                         moveData.chooseObjectve.selectCard[2] = rand() % 2;
+
+                        printf("Choose objectives %d %d %d\n", moveData.chooseObjectve.selectCard[0], moveData.chooseObjectve.selectCard[1], moveData.chooseObjectve.selectCard[2]);
+
                         break;
                     default:
                         break;
                 }
 
-                printf("Match case passed\n");
-
                 MoveResult moveResult;
-                if(sendMove(&moveData, &moveResult) != 0x40) break;
-                printf("Send move\n");
+                if(sendMove(&moveData, &moveResult) != ALL_GOOD) break;
 
-                printf("We play action %d\n", moveData.action);
-
-                if(moveResult.action != NORMAL_MOVE) {
+                if(moveResult.state != NORMAL_MOVE) {
                     printf("You loose\n");
                     break;
                 }
 
-                free(moveResult.opponentMessage);
-                free(moveResult.message);
+                // if(moveResult.opponentMessage != NULL) {
+                //     printf("Opponent message: %s\n", moveResult.opponentMessage);
+                //     free(moveResult.opponentMessage);
+                // }
 
+                // free(moveResult.message);
+
+                if(moveData.action == DRAW_OBJECTIVES) {
+                    moveData.action = CHOOSE_OBJECTIVES;
+
+                    moveData.chooseObjectve.selectCard[0] = rand() % 2;
+                    moveData.chooseObjectve.selectCard[1] = rand() % 2;
+                    moveData.chooseObjectve.selectCard[2] = rand() % 2;
+
+                    printf("Choose objectives %d %d %d\n", moveData.chooseObjectve.selectCard[0], moveData.chooseObjectve.selectCard[1], moveData.chooseObjectve.selectCard[2]);
+
+                    MoveResult moveResult;
+                    if(sendMove(&moveData, &moveResult) != ALL_GOOD) break;
+
+                    if(moveResult.state != NORMAL_MOVE) {
+                        printf("You loose\n");
+                        break;
+                    }
+                }
+                
                 whoPlays = 1;
             }
+
+            printBoard();
         }
 
         free(gameData.gameName);

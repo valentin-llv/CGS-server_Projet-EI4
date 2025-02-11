@@ -35,7 +35,7 @@ class Game(threading.Thread):
         self.timers = []
 
     def checkOptions(self, options):
-        if "start" in options: self.whoPlays = options["start"]
+        if "start" in options and options["start"] != None: self.whoPlays = options["start"]
         else: self.whoPlays = random.randrange(2)
 
         if "seed" in options: self.seed = int(options['seed'])
@@ -62,8 +62,14 @@ class Game(threading.Thread):
     def getMove(self, player):
         # If player is a bot, force him to play a move
         if isinstance(self.players[self.whoPlays], Bot):
-            move = self.players[self.whoPlays].playMove()
-            returnCode, message = self.updateGame(move)
+            move: str = self.players[self.whoPlays].playMove()
+            result = self.updateGame(move)
+
+            if int(move[0]) == 4:
+                move: str = self.players[self.whoPlays].playMove()
+                result = self.updateGame(move)
+
+            returnCode, message = result
 
             player.event("getMoveResponse", { "returnCode": returnCode, "message": message, "move": move })
 
@@ -77,10 +83,30 @@ class Game(threading.Thread):
             pass
 
     def sendMove(self, player, moveData):
-        returnCode, message = self.updateGame(moveData)
-        player.event("sendMoveResponse", { "returnCode": returnCode, "message": message })
+        # Print moveData move
+        print(f"Player {player.name} sent move {moveData}")
 
-        self.nextPlayerTurn()
+        # Convert moveData to string
+        # move = " ".join([str(moveData[x]) for x in moveData])
+
+        move = moveData["actionData"]["move"]
+
+        moveString = str(move)
+
+        if int(move) == 5:
+            moveString += " " + str(moveData["actionData"]["selectCard"][0]) + " " + str(moveData["actionData"]["selectCard"][1]) + " " + str(moveData["actionData"]["selectCard"][2])
+        if int(move) == 1:
+            moveString += " " + str(moveData["actionData"]["from"]) + " " + str(moveData["actionData"]["to"]) + " " + str(moveData["actionData"]["color"]) + " " + str(moveData["actionData"]["nbLocomotives"])
+        if int(move) == 3:
+            moveString += " " + str(moveData["actionData"]["card"])
+
+        print(f"Formatted move string: {moveString}")
+
+        returnCode, message = self.updateGame(moveString)
+        player.event("sendMoveResponse", { "returnCode": returnCode, "message": message, "move": moveString })
+
+        if int(str(move)) != 4:
+            self.nextPlayerTurn()
 
         if returnCode == LOSING_MOVE: # Game ended, player lost
             self.active = False

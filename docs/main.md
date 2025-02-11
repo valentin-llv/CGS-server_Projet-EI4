@@ -13,3 +13,4 @@ The server is coded in Python and uses `sockets` library to handle connections. 
 
 Server logic is as follow:
 
+![Server logic](images/server-logic.png)

@@ -51,6 +51,8 @@ class User(Player, threading.Thread):
 		self.waitingToReconnect = False
 
 	def run(self):
+		self.logger.message(f"User {self.id} has been connected, entering user loop")
+
 		try: self.loop()
 		except SocketClosedException: # Handle user disconnection
 			self.logger.message(f"User {self.name} has been disconnected")
@@ -150,20 +152,72 @@ class User(Player, threading.Thread):
 			board = self.game.getBoard()
 			self.sendMsg({
 				"state": 1, # OK
-				"gameId": self.game.id,
+				"gameName": self.game.id,
 				"gameSeed": self.game.seed,
-				"firstPlayer": 2 if self.game.players[self.game.whoPlays] == self else 1,
+				"starter": 2 if self.game.players[self.game.whoPlays] == self else 1,
 				"boardWidth": self.game.width,
 				"boardHeight": self.game.height,
 				"nbElements": len(board),
-				"board": board,
+				"boardData": board,
 			})
 
 			self.state = StateMachine.PLAYING_GAME
 
 		# Game events
-		elif event == "getMoveResponse": self.sendMsg({ "state": 1, "returnCode": data["returnCode"], "move": data["move"], "op_message": data["message"], "message": data["message"] })
-		elif event == "sendMoveResponse": self.sendMsg({ "state": 1, "returnCode": data["returnCode"], "message": data["message"] })
+		elif event == "getMoveResponse":
+			# print(f"Game sent {data}")
+
+			move = data["move"][0]
+
+			dict = { "state": 1, "move": move, "returnCode": data["returnCode"], "op_message": data["message"], "message": data["message"] }
+
+			if int(move) == 1:
+				ints = [int(s) for s in data["move"].split() if s.isdigit()]
+
+				dict["from"] = ints[1]
+				dict["to"] = ints[2]
+				dict["color"] = ints[3]
+				dict["nbLocomotives"] = ints[4]
+			elif int(move) == 3:
+				dict["cardColor"] = data["move"][2]
+			elif int(move) == 5:
+				dict["objectives1"] = data["move"][2]
+				dict["objectives2"] = data["move"][4]
+				dict["objectives3"] = data["move"][6]
+
+			# print(f"Sending {dict}")
+
+			self.sendMsg(dict)
+
+			# TODO
+		elif event == "sendMoveResponse":
+			# print(f"Game sent {data}")
+
+			move = data["move"][0]
+
+			dict = { "state": 1, "move": move, "returnCode": data["returnCode"], "op_message": data["message"], "message": data["message"] }
+	
+			if int(move) == 2:
+				dict["cardColor"] = data["message"][0]
+			elif int(move) == 4:
+				ints = [int(s) for s in data["message"].split() if s.isdigit()]
+
+				dict["from1"] = ints[0]
+				dict["to1"] = ints[1]
+				dict["score1"] = ints[2]
+
+				dict["from2"] = ints[3]
+				dict["to2"] = ints[4]
+				dict["score2"] = ints[5]
+
+				dict["from3"] = ints[6]
+				dict["to3"] = ints[7]
+				dict["score3"] = ints[8]
+
+			# print(f"Sending {dict}")
+
+			self.sendMsg(dict)
+
 		elif event == "gameEnded": self.sendMsg({ "state": 1, "winner": data["winner"].name })
 
 		# Errors
@@ -185,6 +239,7 @@ class User(Player, threading.Thread):
 		self.name = message["name"]
 		self.state = StateMachine.WAIT_FOR_GAME_SETTINGS
 
+		self.logger.debug(f"User {self.name} has been registered")
 		self.sendMsg({ "state": 1 }) # Send confirmation message, state = 1 => OK
 
 	def getGameSettings(self, gameSettings):
@@ -205,7 +260,7 @@ class User(Player, threading.Thread):
 				# Check if it's user turn, if it is this action is not available
 				if self.game.players[self.game.whoPlays] == self: raise UserSentWrongActionDuringHisTurn(self.sendMsg, self.name)
 
-				self.game.event("getMove", { "player": self, "actionData": actionData["action"] })
+				self.game.event("getMove", { "player": self, "actionData": actionData })
 
 			case "sendMove": # User send move to the game
 				if not "move" in actionData and not actionData["move"]: raise UserSentInvalidMove(self.sendMsg, self.name)
@@ -214,7 +269,7 @@ class User(Player, threading.Thread):
 				if self.game.players[self.game.whoPlays] != self: raise UserSentWrongActionDuringOpponentTurn(self.sendMsg, self.name)
 				
 				# Send move to the game
-				self.game.event("sendMove", { "player": self, "move": actionData["move"] })
+				self.game.event("sendMove", { "player": self, "actionData": actionData })
 
 			case "displayGame":
 				board = str(self.game).encode()

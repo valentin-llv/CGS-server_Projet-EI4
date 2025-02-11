@@ -226,20 +226,62 @@ class TicketToRide(Game):
 		# reset move action
 		self._lastMoveWeb = {}
 
-		# parse for the different moves
-		match move["move"]:
-			case MoveNames.CLAIM_ROUTE:
-				answer = self._claimRoute(move)
-			case MoveNames.DRAW_BLIND_CARD:
-				answer = self._drawBlindCard()
-			case MoveNames.DRAW_CARD:
-				answer = self._drawCard(move)
-			case MoveNames.DRAW_OBJECTIVES:
-				answer = self._drawObjectives()
-			case MoveNames.CHOOSE_OBJECTIVES:
-				answer = self._chooseObjectives(move)
-			case _:
-				return LOSING_MOVE, "The move is not correct!"
+		regClaimRoute = compile(r"^\s*1\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)")   # regex to parse a "1 %d %d %d %d"
+		regDrawBlindCard = compile(r"^\s*2")                                # regex to parse "2"
+		regDrawCard = compile(r"^\s*3\s+(\d+)")                             # regex to parse "3 %d"
+		regDrawObjectives = compile(r"^\s*4")                               # regex to parse "4"
+		regChooseObjectives = compile(r"^\s*5\s+(\d+)\s+(\d+)\s+(\d+)")     # regex to parse "5 %d %d %d"
+
+		# print("Move: ", move)
+
+		# # parse for the different moves
+		# match move["move"]:
+		# 	case MoveNames.CLAIM_ROUTE:
+		# 		answer = self._claimRoute(move)
+		# 	case MoveNames.DRAW_BLIND_CARD:
+		# 		answer = self._drawBlindCard()
+		# 	case MoveNames.DRAW_CARD:
+		# 		answer = self._drawCard(move)
+		# 	case MoveNames.DRAW_OBJECTIVES:
+		# 		answer = self._drawObjectives()
+		# 	case MoveNames.CHOOSE_OBJECTIVES:
+		# 		answer = self._chooseObjectives(move)
+		# 	case _:
+		# 		return LOSING_MOVE, "The move is not correct!"
+
+		claimRoute = regClaimRoute.match(move)
+		drawBlindCard = regDrawBlindCard.match(move)
+		drawCard = regDrawCard.match(move)
+		drawObjectives = regDrawObjectives.match(move)
+		chooseObjectives = regChooseObjectives.match(move)
+		# if the last move was drawObjectives, then this move MUST be chooseObjectives
+		if self._objDrawn and not chooseObjectives:
+			return LOSING_MOVE, "a `draw objectives` move must be followed by a `choose objectives` move"
+		# if the last move was drawCard and the card was not a Locomotive, then this move MUST be drawCard or drawBlindCard
+		if self._shouldTakeAnotherCard and not (drawCard or drawBlindCard):
+			return LOSING_MOVE, "a `draw card` or `draw blind card` must be followed by a `draw card` " \
+			                    "or `draw blind card` (except for Locomotive taken face up)"
+		# the 1st move MUST be chooseObjectives
+		if self._firstMove[self.whoPlays] and not drawObjectives:
+			return LOSING_MOVE, "The 1st move MUST be a `draw objective` move!"
+		# Claim a route
+		if claimRoute:
+			answer = self._claimRoute(claimRoute)
+		# Draw a blind card
+		elif drawBlindCard:
+			answer = self._drawBlindCard()
+		# Draw a train card
+		elif drawCard:
+			answer = self._drawCard(drawCard)
+		# Draw an objective card
+		elif drawObjectives:
+			answer = self._drawObjectives()
+		# Choose an objective card
+		elif chooseObjectives:
+			answer = self._chooseObjectives(chooseObjectives)
+		# otherwise, an incorrect move
+		else:
+			return LOSING_MOVE, "The move is not in correct !"
 
 		# end of the 1st round
 		self._firstMove[self.whoPlays] = False
@@ -403,7 +445,7 @@ class TicketToRide(Game):
 		self._objDrawn = []
 		# message for web client
 		self._lastMoveWeb = {
-			'move': 'Player %s take a %d objective cards' % (self.playerWhoPlays.name, len([o for o in objs if o]))
+			'move': 'Player %s take a %d objective cards' % (self.players[self.whoPlays].name, len([o for o in objs if o]))
 		}
 		# returns the number of chosen objectives
 		return NORMAL_MOVE, str(len([o for o in objs if o]))
@@ -420,7 +462,7 @@ class TicketToRide(Game):
 				return WINNING_MOVE, "No more available objective cards !!"
 		# get the 3 objective cards
 		self._objDrawn = [self._objectivesDeck.pop() for _ in range(3)]
-		return NORMAL_MOVE, " ".join(str(c) for c in self._objDrawn), ""
+		return NORMAL_MOVE, " ".join(str(c) for c in self._objDrawn)
 
 
 	def _drawCard(self, move):
@@ -436,7 +478,7 @@ class TicketToRide(Game):
 		# replace it by one in the deck
 		try:
 			if self._deck.drawFaceUpCard(nC):
-				self.sendComment(self.playerWhoPlays, "Choo choo, three locomotives... New face up cards !")
+				self.sendComment(self.players[self.whoPlays], "Choo choo, three locomotives... New face up cards !")
 		except ValueError:
 			return (LOSING_MOVE if sum(self._cards[self.whoPlays]) >= sum(
 				self._cards[1 - self.whoPlays]) else WINNING_MOVE), "No more cards in the deck !!"
@@ -452,12 +494,12 @@ class TicketToRide(Game):
 		# message for web client
 		self._lastMoveWeb = {
 			'faceUp': self._deck.faceUp,
-			'move': 'Player %s take a %s card' % (self.playerWhoPlays.name, colorNames[card])
+			'move': 'Player %s take a %s card' % (self.players[self.whoPlays].name, colorNames[card])
 		}
 		# send:
 		# - to the player: the deck
 		# - to the opponent: if the player replay, the card taken and the deck
-		return NORMAL_MOVE, deck, ("1 " if self._shouldTakeAnotherCard else "0 ") + str(card) + " " + deck
+		return NORMAL_MOVE, deck
 
 
 	def _drawBlindCard(self):
@@ -475,11 +517,11 @@ class TicketToRide(Game):
 				return WINNING_MOVE, "No more cards in the deck !!"
 		self._shouldTakeAnotherCard = not self._shouldTakeAnotherCard  # need/no need to take another card
 		# message for web client
-		self._lastMoveWeb = {'move': 'Player %s take a blind card' % self.playerWhoPlays.name}
+		self._lastMoveWeb = {'move': 'Player %s take a blind card' % self.players[self.whoPlays].name}
 		# send:
 		# - to the player: card drawn
 		# - to the opponent: if the player replay
-		return NORMAL_MOVE, str(draw), ("1 " if self._shouldTakeAnotherCard else "0 ")
+		return NORMAL_MOVE, str(draw)
 
 
 	def _claimRoute(self, move):
@@ -535,7 +577,7 @@ class TicketToRide(Game):
 		self._lastMoveWeb = {
 			'track': [tr.imagePos, self.whoPlays],
 			'move': "Player %s takes the road %s \U00002192 %s<br/> (%s, %d locomotives)" % (
-				self.playerWhoPlays.name, self._theMap.getCityName(city1), self._theMap.getCityName(city2), colorNames[card], nbLoco
+				self.players[self.whoPlays].name, self._theMap.getCityName(city1), self._theMap.getCityName(city2), colorNames[card], nbLoco
 			)
 		}
 
