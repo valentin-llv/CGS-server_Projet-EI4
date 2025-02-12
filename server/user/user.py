@@ -169,8 +169,10 @@ class User(Player, threading.Thread):
 
 			move = data["move"][0]
 
+			# TODO: opponenet message
 			dict = { "state": 1, "move": move, "returnCode": data["returnCode"], "op_message": data["message"], "message": data["message"] }
 
+			# Fill with opponent move infos
 			if int(move) == 1:
 				ints = [int(s) for s in data["move"].split() if s.isdigit()]
 
@@ -181,22 +183,19 @@ class User(Player, threading.Thread):
 			elif int(move) == 3:
 				dict["cardColor"] = data["move"][2]
 			elif int(move) == 5:
-				dict["objectives1"] = data["move"][2]
-				dict["objectives2"] = data["move"][4]
-				dict["objectives3"] = data["move"][6]
+				dict["objective1"] = data["move"][2]
+				dict["objective2"] = data["move"][4]
+				dict["objective3"] = data["move"][6]
 
-			# print(f"Sending {dict}")
+			# TODO: add opponent move result infos
 
 			self.sendMsg(dict)
-
-			# TODO
 		elif event == "sendMoveResponse":
-			# print(f"Game sent {data}")
-
 			move = data["move"][0]
 
 			dict = { "state": 1, "move": move, "returnCode": data["returnCode"], "op_message": data["message"], "message": data["message"] }
-	
+
+			# Fill with user move infos
 			if int(move) == 2:
 				dict["cardColor"] = data["message"][0]
 			elif int(move) == 4:

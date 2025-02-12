@@ -6,7 +6,10 @@
 
 int main() {
     // cgs.valentin-lelievre.com
-    if(!connectToCGS("cgs.valentin-lelievre.com", 15001)) return 1;
+    int result = connectToCGS("cgs.valentin-lelievre.com", 15001);
+
+    if(!result) return 1;
+
     if(!sendName("test")) return 1;
 
     while(1) {
@@ -29,15 +32,7 @@ int main() {
             return 1;
         }
 
-        printf("Game name: %s\n", gameData.gameName);
-
-        // Print all game data
-        printf("Game seed: %d\n", gameData.gameSeed);
-        printf("Board width: %d\n", gameData.boardWidth);
-        printf("Board height: %d\n", gameData.boardHeight);
-
         int whoPlays = gameData.starter;
-        printf("Starter: %d\n", whoPlays);
 
         while(1) {
             if(whoPlays == 1) {
@@ -60,6 +55,7 @@ int main() {
 
                 whoPlays = 0;
             } else {
+                printBoard();
 
                 MoveData moveData;
                 
@@ -103,8 +99,6 @@ int main() {
                         break;
                 }
 
-                printf("test\n");   
-
                 MoveResult moveResult;
                 if(sendMove(&moveData, &moveResult) != ALL_GOOD) break;
 
@@ -113,12 +107,12 @@ int main() {
                     break;
                 }
 
-                // if(moveResult.opponentMessage != NULL) {
-                //     printf("Opponent message: %s\n", moveResult.opponentMessage);
-                //     free(moveResult.opponentMessage);
-                // }
+                if(moveResult.opponentMessage != NULL) {
+                    printf("Opponent message: %s\n", moveResult.opponentMessage);
+                    free(moveResult.opponentMessage);
+                }
 
-                // free(moveResult.message);
+                free(moveResult.message);
 
                 if(moveData.action == DRAW_OBJECTIVES) {
                     moveData.action = CHOOSE_OBJECTIVES;
@@ -140,8 +134,6 @@ int main() {
                 
                 whoPlays = 1;
             }
-
-            printBoard();
         }
 
         free(gameData.gameName);
