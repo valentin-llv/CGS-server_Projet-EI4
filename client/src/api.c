@@ -72,59 +72,70 @@ int SOCKET;
 ResultCode connectToCGS(char* adress, unsigned int port) {
     if(!port) return PARAM_ERROR;
 
-    char* ipAdress = adress;
-    int adrSize = 0;
+    char* ipAdress = NULL;
+    int adrType = 0;
 
     // Verify provided IP adress and it's type: IPV4 or IPV6
     int ipVerificationResult = isValidIpAddress(adress);
+
     if(ipVerificationResult <= 0) { 
         // Invalid IP, user might have used a domain name instead of an IP adress
-        ResultCode dnsResult = dnsSearch(adress, &ipAdress, &adrSize);
+        ResultCode dnsResult = dnsSearch(adress, &ipAdress, &adrType);
 
         if(dnsResult == ALL_GOOD) {
-            // Print that the domain name have resolve into an adress
-            printf("\x1b[1;32mDomain name %s resolved into IP adress %s\x1b[0m\n", adress, ipAdress);
-        } else return dnsResult;
-    } else adrSize = ipVerificationResult;
+            char* adressTypeName = (char *) malloc(5 * sizeof(char));
 
-    ResultCode result = connectToSocket(adress, port, adrSize);
+            // Check if malloc failed
+            if(adressTypeName == NULL) return MEMORY_ALLOCATION_ERROR;
 
-    free(ipAdress);
-    return result;
+            if(adrType == AF_INET) sprintf(adressTypeName, "IPv4");
+            else sprintf(adressTypeName, "IPv6");
+            
+            printf("\x1b[1;32mDomain name %s resolved into an %s adress: %s\x1b[0m\n", adress, adressTypeName, ipAdress);
+            free(adressTypeName);
+        } else {
+            printf("\x1b[1;31mDomain name %s failed to resolve into an IP adress\x1b[0m\n", adress);
+            return PARAM_ERROR;
+        }
+    } else adrType = ipVerificationResult;
+
+    if(ipAdress != NULL) {
+        ResultCode result = connectToSocket(ipAdress, port, adrType);
+        free(ipAdress);
+
+        return result;
+    } else return connectToSocket(adress, port, adrType);
 }
 
 // After connecting to the server you need to send your name to the server. It will be used to uniquely identify you.
 // You need to provide your name as a string. It should be less than 90 characters long.
 
 ResultCode sendName(char* name) {
-    // Check user's provided data
-    if(strlen(name) >= 90) return PARAM_ERROR;
+    // Check user's provided data, max name length is 90 characters
+    if(strlen(name) >= MAX_USERNAME_LENGTH) return PARAM_ERROR;
 
     // Parse data into json string
-    char* data = (char *) malloc(100 * sizeof(char));
+    char* data = (char *) malloc((MAX_USERNAME_LENGTH + 20) * sizeof(char));
 
     // Check if malloc failed
     if(data == NULL) return MEMORY_ALLOCATION_ERROR;
 
     // Fill data with name
-    int dataLenght = sprintf(data, "{ 'name': '%s' }", name);
+    int dataLength = sprintf(data, "{ 'name': '%s' }", name);
 
     // Send data and check for succes
-    if(!sendData(data, dataLenght)) return SERVER_ERROR;
+    if(!sendData(data, dataLength)) return SERVER_ERROR;
     free(data);
     
     // Get server acknowledgement
-    char* string; int* stringLength = (int *) malloc(sizeof(int));
-    jsmntok_t* tokens = (jsmntok_t *) malloc(5 * sizeof(jsmntok_t));
+    char* string; jsmntok_t* tokens = (jsmntok_t *) malloc(SERVER_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
 
     // Check if malloc failed
-    if(stringLength == NULL) return MEMORY_ALLOCATION_ERROR;
     if(tokens == NULL) return MEMORY_ALLOCATION_ERROR;
 
-    if(!getServerResponse(&string, stringLength, tokens, 5)) return SERVER_ERROR;
+    if(!getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) return SERVER_ERROR;
 
     free(string);
-    free(stringLength);
     free(tokens);
 
     // Return succes
@@ -161,14 +172,12 @@ ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
     free(data);
 
     // Get server acknowledgement
-    char* string; int* stringLength = (int *) malloc(sizeof(int));
-    jsmntok_t* tokens = (jsmntok_t *) malloc(19 * sizeof(jsmntok_t));
+    char* string; jsmntok_t* tokens = (jsmntok_t *) malloc(GAME_SETTINGS_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
 
     // Check if malloc failed
-    if(stringLength == NULL) return MEMORY_ALLOCATION_ERROR;
     if(tokens == NULL) return MEMORY_ALLOCATION_ERROR;
 
-    if(!getServerResponse(&string, stringLength, tokens, 19)) return SERVER_ERROR;
+    if(!getServerResponse(&string, tokens, GAME_SETTINGS_ACKNOWLEDGEMENT_JSON_SIZE)) return SERVER_ERROR;
 
     // Set struct from param to defaults values
     *gameData = GameDataDefaults;
@@ -207,7 +216,6 @@ ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
     gameData->boardData = boardData;
 
     free(string);
-    free(stringLength);
     free(tokens);
 
     // Return succes
@@ -226,14 +234,12 @@ ResultCode getMove(MoveData* moveData, MoveResult* moveResult) {
     if(!sendData(data, strlen(data))) return SERVER_ERROR;
 
     // Get server acknowledgement
-    char* string; int* stringLength = (int *) malloc(sizeof(int));
-    jsmntok_t* tokens = (jsmntok_t *) malloc(19 * sizeof(jsmntok_t));
+    char* string; jsmntok_t* tokens = (jsmntok_t *) malloc(SEND_MOVE_RESPONSE_JSON_SIZE * sizeof(jsmntok_t));
 
     // Check if malloc failed
-    if(stringLength == NULL) return MEMORY_ALLOCATION_ERROR;
     if(tokens == NULL) return MEMORY_ALLOCATION_ERROR;
 
-    if(!getServerResponse(&string, stringLength, tokens, 19)) return SERVER_ERROR;
+    if(!getServerResponse(&string, tokens, SEND_MOVE_RESPONSE_JSON_SIZE)) return SERVER_ERROR;
 
     // Call the function related to the selected game to properly unpack the data
     int result = unpackGetMoveData(string, tokens, moveData, moveResult);
@@ -241,7 +247,6 @@ ResultCode getMove(MoveData* moveData, MoveResult* moveResult) {
     if(result == -1) return OTHER_ERROR;
 
     free(string);
-    free(stringLength);
     free(tokens);
 
     // Return success
@@ -269,25 +274,17 @@ ResultCode sendMove(MoveData* moveData, MoveResult* moveResult) {
     free(data);
 
     // Get server acknowledgement
-    char* string; int* stringLength = (int *) malloc(sizeof(int));
-    jsmntok_t* tokens = (jsmntok_t *) malloc(33 * sizeof(jsmntok_t));
+    char* string; jsmntok_t* tokens = (jsmntok_t *) malloc(SEND_MOVE_RESPONSE_JSON_SIZE * sizeof(jsmntok_t));
 
     // Check if malloc failed
-    if(stringLength == NULL) return MEMORY_ALLOCATION_ERROR;
     if(tokens == NULL) return MEMORY_ALLOCATION_ERROR;
 
-    if(!getServerResponse(&string, stringLength, tokens, 33)) return SERVER_ERROR;
+    if(!getServerResponse(&string, tokens, SEND_MOVE_RESPONSE_JSON_SIZE)) return SERVER_ERROR;
 
-    moveResult->state = atoi(&string[tokens[2].start]);
-
-    // If returnCode is NORMAL_MOVE, unpack the data
-    if(moveResult->state == NORMAL_MOVE) {
-        int result = unpackSendMoveResult(string, tokens, moveResult);
-        if(result == -1) return OTHER_ERROR;
-    }
+    int result = unpackSendMoveResult(string, tokens, moveResult);
+    if(result == -1) return OTHER_ERROR;
 
     free(string);
-    free(stringLength);
     free(tokens);
 
     // Return success
@@ -299,10 +296,10 @@ ResultCode sendMove(MoveData* moveData, MoveResult* moveResult) {
 
 ResultCode sendMessage(char* message) {
     // Check user's provided data
-    if(strlen(message) >= 256) return PARAM_ERROR;
+    if(strlen(message) >= MAX_MESSAGE_LENGTH) return PARAM_ERROR;
 
     // Parse data into json string
-    char* data = (char *) malloc(300 * sizeof(char));
+    char* data = (char *) malloc((MAX_MESSAGE_LENGTH + 50) * sizeof(char));
 
     // Check if malloc failed
     if(data == NULL) return MEMORY_ALLOCATION_ERROR;
@@ -314,17 +311,14 @@ ResultCode sendMessage(char* message) {
     free(data);
 
     // Get server acknowledgement
-    char* string; int* stringLength = (int *) malloc(sizeof(int));
-    jsmntok_t* tokens = (jsmntok_t *) malloc(5 * sizeof(jsmntok_t));
+    char* string; jsmntok_t* tokens = (jsmntok_t *) malloc(SERVER_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
 
     // Check if malloc failed
-    if(stringLength == NULL) return MEMORY_ALLOCATION_ERROR;
     if(tokens == NULL) return MEMORY_ALLOCATION_ERROR;
 
-    if(!getServerResponse(&string, stringLength, tokens, 5)) return SERVER_ERROR;
+    if(!getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) return SERVER_ERROR;
 
     free(string);
-    free(stringLength);
     free(tokens);
 
     // Return success
@@ -342,33 +336,33 @@ ResultCode printBoard() {
     if(!sendData(data, strlen(data))) return SERVER_ERROR;
 
     // Get server acknowledgement
-    char* string; int* stringLength = (int *) malloc(sizeof(int));
-    jsmntok_t* tokens = (jsmntok_t *) malloc(5 * sizeof(jsmntok_t));
+    char* string; jsmntok_t* tokens = (jsmntok_t *) malloc(SERVER_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
 
     // Check if malloc failed
-    if(stringLength == NULL) return MEMORY_ALLOCATION_ERROR;
     if(tokens == NULL) return MEMORY_ALLOCATION_ERROR;
 
-    if(!getServerResponse(&string, stringLength, tokens, 5)) return SERVER_ERROR;
+    if(!getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) return SERVER_ERROR;
 
     int blockLength = atoi(&string[tokens[4].start]) + 1;
     char* buffer = (char *) malloc(blockLength * sizeof(char));
+
+    // Check if malloc failed
+    if(buffer == NULL) return MEMORY_ALLOCATION_ERROR;
+
+    // Fill buffer with 0
     memset(buffer, 0, blockLength * sizeof(char));
 
     // Read new incoming message on the socket wire
-    int totalRead = 0;
-    while (totalRead < blockLength - 1) {
-        int res = read(SOCKET, buffer + totalRead, blockLength - 1 - totalRead);
-        if (res <= 0) return SERVER_ERROR; // Ensure it reads the correct amount of data
-        totalRead += res;
-    }
+    int res = readNBtye(&buffer, blockLength - 1);
+
+    // Check for error
+    if(res == -1) return SERVER_ERROR;
 
     // Print the board
     printf("%s\n", buffer);
 
     free(buffer);
     free(string);
-    free(stringLength);
     free(tokens);
 
     // Return success
@@ -385,30 +379,19 @@ ResultCode quitGame() {
     if(!sendData(data, strlen(data))) return SERVER_ERROR;
 
     // Get server acknowledgement
-    char* string; int* stringLength = (int *) malloc(sizeof(int));
-    jsmntok_t* tokens = (jsmntok_t *) malloc(5 * sizeof(jsmntok_t));
+    char* string; jsmntok_t* tokens = (jsmntok_t *) malloc(SERVER_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
 
     // Check if malloc failed
-    if(stringLength == NULL) return MEMORY_ALLOCATION_ERROR;
     if(tokens == NULL) return MEMORY_ALLOCATION_ERROR;
 
-    if(!getServerResponse(&string, stringLength, tokens, 5)) return SERVER_ERROR;
+    if(!getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) return SERVER_ERROR;
 
     free(string);
-    free(stringLength);
     free(tokens);
 
     // Return succes
     return ALL_GOOD;
 }
-
-/*
-
-    Hidden constants
-
-*/
-
-#define FIRST_MSG_LENGTH 6
 
 /*
 
@@ -419,18 +402,18 @@ ResultCode quitGame() {
 
 */
 
-static ResultCode connectToSocket(char* adress, unsigned int port, unsigned int adrSize) {
-    int soc = socket(adrSize, SOCK_STREAM, 0); // Use TCP socket
+static ResultCode connectToSocket(char* adress, unsigned int port, unsigned int adrType) {
+    int soc = socket(adrType, SOCK_STREAM, 0); // Use TCP socket
     if (soc < 0) {
         printf("\x1b[1;31mSocket creation failed\x1b[0m\n");
         return OTHER_ERROR;
     }
 
     struct sockaddr_in serv_addr;
-    serv_addr.sin_family = adrSize;
+    serv_addr.sin_family = adrType;
     serv_addr.sin_port = htons(port);
 
-    int res = inet_pton(adrSize, adress, &serv_addr.sin_addr);
+    int res = inet_pton(adrType, adress, &serv_addr.sin_addr);
     if (res <= 0) {
         printf("\x1b[1;31mInvalid address / address not supported\x1b[0m\n");
         return OTHER_ERROR;
@@ -446,7 +429,7 @@ static ResultCode connectToSocket(char* adress, unsigned int port, unsigned int 
     return ALL_GOOD;
 }
 
-static ResultCode dnsSearch(char* domain, char** ipAdress, int* adrSize) {
+static ResultCode dnsSearch(char* domain, char** ipAdress, int* adrType) {
     // Do a DNS search to resolve domain name
     struct addrinfo* dnsResult = NULL;
     int result = getaddrinfo(domain, 0, 0, &dnsResult);
@@ -456,19 +439,26 @@ static ResultCode dnsSearch(char* domain, char** ipAdress, int* adrSize) {
         return OTHER_ERROR;
     }
 
-    *adrSize = dnsResult->ai_addr->sa_family == AF_INET ? INET_ADDRSTRLEN : INET6_ADDRSTRLEN;
-    *ipAdress = (char *) malloc(*adrSize * sizeof(char));
+    // Get IP adress type
+    *adrType = dnsResult->ai_addr->sa_family;
 
-    // Check if IPV4 or IPV6 adress found
+    int adrSize = *adrType == AF_INET ? INET_ADDRSTRLEN : INET6_ADDRSTRLEN;
+    *ipAdress = (char *) malloc(adrSize * sizeof(char));
+
+    // Check if malloc failed
+    if(*ipAdress == NULL) return MEMORY_ALLOCATION_ERROR;
+
+    // Convert IP adress to string
     if(dnsResult->ai_addr->sa_family == AF_INET) { // IPV4 adress found
         struct sockaddr_in *p = (struct sockaddr_in *) dnsResult->ai_addr;
-        inet_ntop(AF_INET, &p->sin_addr, *ipAdress, *adrSize);
+        inet_ntop(AF_INET, &p->sin_addr, *ipAdress, adrSize);
     } else if (dnsResult->ai_addr->sa_family == AF_INET6) { // IPV6 adress found
         struct sockaddr_in6 *p = (struct sockaddr_in6 *) dnsResult->ai_addr;
-        inet_ntop(AF_INET6, &p->sin6_addr, *ipAdress, *adrSize);
+        inet_ntop(AF_INET6, &p->sin6_addr, *ipAdress, adrSize);
     }
 
     freeaddrinfo(dnsResult);
+    return ALL_GOOD;
 }
 
 static int sendData(char* data, unsigned int dataLenght) {
@@ -498,18 +488,18 @@ static int sendData(char* data, unsigned int dataLenght) {
     return 1;
 }
 
-static int getServerResponse(char** string, int* stringLength, jsmntok_t* tokens, int nbTokens) {
-    // Get data
-    if(!getData(string, stringLength)) return -1;
+static int getServerResponse(char** string, jsmntok_t* tokens, int nbTokens) {
+    int stringLength;
 
-    printf("Data: %s\n", *string);
+    // Get data
+    if(!getData(string, &stringLength)) return -1;
     
     // Instanciate json parser
     jsmn_parser parser;
     jsmn_init(&parser);
 
     // Parse json string
-    jsmn_parse(&parser, *string, *stringLength, tokens, nbTokens);
+    jsmn_parse(&parser, *string, stringLength, tokens, nbTokens);
 
     // Get state infos
     int state = atoi(&(*string)[tokens[2].start]);
@@ -538,15 +528,18 @@ static int getData(char** string, int* stringLength) {
 
     // Allocate buffer of 0 based on the next message length
     char* buffer2 = (char *) malloc(*stringLength * sizeof(char));
+
+    // Check if malloc failed
+    if(buffer2 == NULL) return -1;
+
+    // Fill buffer with 0
     memset(buffer2, 0, (*stringLength) * sizeof(char));
 
     // Read new incoming message on the socket wire
-    int totalRead = 0;
-    while (totalRead < *stringLength - 1) {
-        int res2 = read(SOCKET, buffer2 + totalRead, *stringLength - 1 - totalRead);
-        if (res2 <= 0) return -1; // Ensure it reads the correct amount of data
-        totalRead += res2;
-    }
+    res = readNBtye(&buffer2, *stringLength - 1);
+
+    // Check for error
+    if(res == -1) return -1;
     
     // Copy received data to **string param to effectively return the received string
     *string = (char *) malloc(*stringLength * sizeof(char));
@@ -557,6 +550,19 @@ static int getData(char** string, int* stringLength) {
     strcpy(*string, buffer2);
 
     // Return success
+    return 1;
+}
+
+static int readNBtye(char** buffer, int nbByte) {
+    int totalRead = 0;
+    while (totalRead < nbByte) {
+        int res2 = read(SOCKET, *buffer + totalRead, nbByte - totalRead);
+        totalRead += res2;
+
+        // Check for error
+        if (res2 <= 0) return -1;
+    }
+
     return 1;
 }
 
@@ -579,12 +585,12 @@ static int isValidIpAddress(char *ipAddress) {
     // Assume IPV 4
     int result = inet_pton(AF_INET, ipAddress, &(sa.sin_addr));
 
-    if(result == 0) { // Incorrect IP adress family
+    if(result == 1) return AF_INET;
+    else if(result == 0) { // Incorrect IP adress family
         // Try IPV 6
         result = inet_pton(AF_INET6, ipAddress, &(sa.sin_addr));
 
-        if(result <= 0) return -1; // Invalid IP
+        if(result <= 0) return result; // Invalid IP
         else return AF_INET6;
-    } else if(result == -1) return -1; // Invalid IP adress format (IPV 4 or IPV 6)
-    else return AF_INET;
+    } else return result; // Invalid IP adress format (IPV 4 or IPV 6)
 }

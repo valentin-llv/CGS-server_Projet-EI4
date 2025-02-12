@@ -145,7 +145,12 @@ typedef enum {
 
 static const unsigned int MAX_TIMEOUT = 60; // in seconds
 static const unsigned int MIN_TIMEOUT = 5;
+
 static const unsigned int MAX_SEED = 10000;
+
+static const unsigned int MAX_USERNAME_LENGTH = 100;
+
+static const unsigned int MAX_MESSAGE_LENGTH = 256;
 
 // Used to set defaults values to struct. The defintion are in api.c
 extern const GameSettings GameSettingsDefaults;
@@ -173,17 +178,25 @@ ResultCode quitGame();
 
 /*
 
-    Hidden functions
+    Hidden functions and constants
 
 */
+
+#define FIRST_MSG_LENGTH 6
+
+// Json messages size, (nb of key * 2) + 1
+#define SERVER_ACKNOWLEDGEMENT_JSON_SIZE 5
+#define GAME_SETTINGS_ACKNOWLEDGEMENT_JSON_SIZE 19
 
 static ResultCode connectToSocket(char* adress, unsigned int port, unsigned int adrSize);
 static ResultCode dnsSearch(char* domain, char** ipAdress, int* adrSize);
 
 static int sendData(char* data, unsigned int dataLenght);
 
-static int getServerResponse(char** string, int* stringLength, jsmntok_t* tokens, int nbTokens);
+static int getServerResponse(char** string, jsmntok_t* tokens, int nbTokens);
 static int getData(char** string, int* stringLength);
+
+static int readNBtye(char** buffer, int nbByte);
 
 /*
 

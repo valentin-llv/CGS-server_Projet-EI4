@@ -108,7 +108,10 @@ typedef struct MoveResult_ {
 
 */
 
-static const unsigned int PACKED_DATA_MAX_SIZE = 400;
+#define PACKED_DATA_MAX_SIZE 400
+
+#define GET_MOVE_RESPONSE_JSON_SIZE 19
+#define SEND_MOVE_RESPONSE_JSON_SIZE 29
 
 /*
 
@@ -171,7 +174,6 @@ int unpackGetMoveData(char* string, jsmntok_t* tokens, MoveData* moveData, MoveR
     moveResult->opponentMessage = opponentMessage;;
 
     int blockLength2 = tokens[10].end - tokens[10].start + 1;
-
     char* message = (char *) malloc(blockLength2 * sizeof(char));
 
     // Check if malloc failed
@@ -204,6 +206,8 @@ int unpackGetMoveData(char* string, jsmntok_t* tokens, MoveData* moveData, MoveR
         default:
             return -1;
     }
+
+    // TODO: Fill the opponent move result data
 
     return 1;
 }
