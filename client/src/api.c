@@ -72,43 +72,24 @@ int SOCKET;
 ResultCode connectToCGS(char* adress, unsigned int port) {
     if(!port) return PARAM_ERROR;
 
-    char* ipAdress = NULL;
+    char* ipAdress = adress;
+    int adrSize = 0;
 
-    if(!isValidIpAddress(adress)) {
-        // printf("\x1b[1;33mResolving domain name %s\x1b[0m\n", adress);
+    // Verify provided IP adress and it's type: IPV4 or IPV6
+    int ipVerificationResult = isValidIpAddress(adress);
+    if(ipVerificationResult <= 0) { 
+        // Invalid IP, user might have used a domain name instead of an IP adress
+        ResultCode dnsResult = dnsSearch(adress, &ipAdress, &adrSize);
 
-        // Do a DNS search to resolve domain name
-        struct addrinfo* dnsResult = NULL;
-        int result = getaddrinfo(adress, 0, 0, &dnsResult);
+        if(dnsResult == ALL_GOOD) {
+            // Print that the domain name have resolve into an adress
+            printf("\x1b[1;32mDomain name %s resolved into IP adress %s\x1b[0m\n", adress, ipAdress);
+        } else return dnsResult;
+    } else adrSize = ipVerificationResult;
 
-        if(result != 0) {
-            printf("\x1b[1;31mDNS search failed\x1b[0m\n");
-            return OTHER_ERROR;
-        }
+    ResultCode result = connectToSocket(adress, port, adrSize);
 
-        int adrSize = dnsResult->ai_addr->sa_family == AF_INET ? INET_ADDRSTRLEN : INET6_ADDRSTRLEN;
-        ipAdress = (char *) malloc(adrSize * sizeof(char));
-
-        // Check if IPV4 or IPV6 adress found        
-        if(dnsResult->ai_addr->sa_family == AF_INET) { // IPV4 adress found
-            struct sockaddr_in *p = (struct sockaddr_in *) dnsResult->ai_addr;
-            inet_ntop(AF_INET, &p->sin_addr, ipAdress, adrSize);
-        } else if (dnsResult->ai_addr->sa_family == AF_INET6) { // IPV6 adress found
-            struct sockaddr_in6 *p = (struct sockaddr_in6 *) dnsResult->ai_addr;
-            inet_ntop(AF_INET6, &p->sin6_addr, ipAdress, adrSize);
-        }
-
-        // Print that the domain name have resolve into an adress
-        printf("\x1b[1;32mDomain name %s resolved into IP adress %s\x1b[0m\n", adress, ipAdress);
-
-        adress = ipAdress;
-        freeaddrinfo(dnsResult);
-    }
-
-    ResultCode result = connectToSocket(adress, port);
-
-    if(ipAdress != NULL) free(ipAdress);
-
+    free(ipAdress);
     return result;
 }
 
@@ -283,19 +264,13 @@ ResultCode sendMove(MoveData* moveData, MoveResult* moveResult) {
     // Check if pack failed
     if(dataLength == -1) return OTHER_ERROR;
 
-    printf("Data: %s\n", data);
-
     // Send data and check for success
     if(!sendData(data, dataLength)) return SERVER_ERROR;
     free(data);
 
-    printf("Data sent\n");
-
     // Get server acknowledgement
     char* string; int* stringLength = (int *) malloc(sizeof(int));
     jsmntok_t* tokens = (jsmntok_t *) malloc(33 * sizeof(jsmntok_t));
-
-    printf("Waiting for data\n");
 
     // Check if malloc failed
     if(stringLength == NULL) return MEMORY_ALLOCATION_ERROR;
@@ -303,14 +278,10 @@ ResultCode sendMove(MoveData* moveData, MoveResult* moveResult) {
 
     if(!getServerResponse(&string, stringLength, tokens, 33)) return SERVER_ERROR;
 
-    printf("Data recieved\n");
-
     moveResult->state = atoi(&string[tokens[2].start]);
 
     // If returnCode is NORMAL_MOVE, unpack the data
     if(moveResult->state == NORMAL_MOVE) {
-        printf("Unpacking data\n");
-
         int result = unpackSendMoveResult(string, tokens, moveResult);
         if(result == -1) return OTHER_ERROR;
     }
@@ -392,6 +363,7 @@ ResultCode printBoard() {
         totalRead += res;
     }
 
+    // Print the board
     printf("%s\n", buffer);
 
     free(buffer);
@@ -447,18 +419,18 @@ ResultCode quitGame() {
 
 */
 
-static ResultCode connectToSocket(char* adress, unsigned int port) {
-    int soc = socket(AF_INET, SOCK_STREAM, 0);
+static ResultCode connectToSocket(char* adress, unsigned int port, unsigned int adrSize) {
+    int soc = socket(adrSize, SOCK_STREAM, 0); // Use TCP socket
     if (soc < 0) {
         printf("\x1b[1;31mSocket creation failed\x1b[0m\n");
         return OTHER_ERROR;
     }
 
     struct sockaddr_in serv_addr;
-    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_family = adrSize;
     serv_addr.sin_port = htons(port);
 
-    int res = inet_pton(AF_INET, adress, &serv_addr.sin_addr);
+    int res = inet_pton(adrSize, adress, &serv_addr.sin_addr);
     if (res <= 0) {
         printf("\x1b[1;31mInvalid address / address not supported\x1b[0m\n");
         return OTHER_ERROR;
@@ -472,6 +444,31 @@ static ResultCode connectToSocket(char* adress, unsigned int port) {
 
     SOCKET = soc;
     return ALL_GOOD;
+}
+
+static ResultCode dnsSearch(char* domain, char** ipAdress, int* adrSize) {
+    // Do a DNS search to resolve domain name
+    struct addrinfo* dnsResult = NULL;
+    int result = getaddrinfo(domain, 0, 0, &dnsResult);
+
+    if(result != 0) {
+        printf("\x1b[1;31mDNS search failed\x1b[0m\n");
+        return OTHER_ERROR;
+    }
+
+    *adrSize = dnsResult->ai_addr->sa_family == AF_INET ? INET_ADDRSTRLEN : INET6_ADDRSTRLEN;
+    *ipAdress = (char *) malloc(*adrSize * sizeof(char));
+
+    // Check if IPV4 or IPV6 adress found
+    if(dnsResult->ai_addr->sa_family == AF_INET) { // IPV4 adress found
+        struct sockaddr_in *p = (struct sockaddr_in *) dnsResult->ai_addr;
+        inet_ntop(AF_INET, &p->sin_addr, *ipAdress, *adrSize);
+    } else if (dnsResult->ai_addr->sa_family == AF_INET6) { // IPV6 adress found
+        struct sockaddr_in6 *p = (struct sockaddr_in6 *) dnsResult->ai_addr;
+        inet_ntop(AF_INET6, &p->sin6_addr, *ipAdress, *adrSize);
+    }
+
+    freeaddrinfo(dnsResult);
 }
 
 static int sendData(char* data, unsigned int dataLenght) {
@@ -532,27 +529,16 @@ static int getData(char** string, int* stringLength) {
     // Allocate buffer to store data from read
     char buffer[FIRST_MSG_LENGTH] = { 0 };
 
-    printf("test 1\n");
-
     // Read incoming data on socket wire
     int res = read(SOCKET, buffer, FIRST_MSG_LENGTH - 1);
     if(res <= 0) return -1; // Ensure it reads the correct amount of data
 
-    printf("test 2\n");
-
-    printf("Buffer: %s\n", buffer);
-
     // First message contain the length of the next one
     *stringLength = atoi(buffer) + 1;
-
-    // Printf string length
-    printf("String length: %d\n", *stringLength);
 
     // Allocate buffer of 0 based on the next message length
     char* buffer2 = (char *) malloc(*stringLength * sizeof(char));
     memset(buffer2, 0, (*stringLength) * sizeof(char));
-
-    printf("test 3\n");
 
     // Read new incoming message on the socket wire
     int totalRead = 0;
@@ -561,20 +547,14 @@ static int getData(char** string, int* stringLength) {
         if (res2 <= 0) return -1; // Ensure it reads the correct amount of data
         totalRead += res2;
     }
-
-    printf("test 4\n");
     
     // Copy received data to **string param to effectively return the received string
     *string = (char *) malloc(*stringLength * sizeof(char));
-
-    printf("test 5\n");
 
     // Check if malloc failed
     if(*string == NULL) return -1;
 
     strcpy(*string, buffer2);
-
-    printf("test 6\n");
 
     // Return success
     return 1;
@@ -595,13 +575,16 @@ static int getIntegerLength(int value) {
 
 static int isValidIpAddress(char *ipAddress) {
     struct sockaddr_in sa;
+
+    // Assume IPV 4
     int result = inet_pton(AF_INET, ipAddress, &(sa.sin_addr));
 
-    if(result == 0) {
-        // printf("\x1b[1;31mInvalid IP address\x1b[0m\n");
-        return 0;
-    } else if(result == -1) {
-        printf("\x1b[1;31mAddress not supported\x1b[0m\n");
-        return 0;
-    } else return 1;
+    if(result == 0) { // Incorrect IP adress family
+        // Try IPV 6
+        result = inet_pton(AF_INET6, ipAddress, &(sa.sin_addr));
+
+        if(result <= 0) return -1; // Invalid IP
+        else return AF_INET6;
+    } else if(result == -1) return -1; // Invalid IP adress format (IPV 4 or IPV 6)
+    else return AF_INET;
 }

@@ -74,13 +74,14 @@ def printHelp():
 
 def loop():
 	while True:
-		command = input("")
+		# command = input("")
 		
-		if command in commandsActionsDict: commandsActionsDict[command]()
-		elif command == "help": printHelp()
-		else: print("Command not found, type 'help' to see available commands")
+		# if command in commandsActionsDict: commandsActionsDict[command]()
+		# elif command == "help": printHelp()
+		# else: print("Command not found, type 'help' to see available commands")
 
-		print(">> ", end = "")
+		# print(">> ", end = "")
+		pass
 
 if __name__ == "__main__":
 	main()

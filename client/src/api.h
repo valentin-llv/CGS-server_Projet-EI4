@@ -177,7 +177,8 @@ ResultCode quitGame();
 
 */
 
-static ResultCode connectToSocket(char* adress, unsigned int port);
+static ResultCode connectToSocket(char* adress, unsigned int port, unsigned int adrSize);
+static ResultCode dnsSearch(char* domain, char** ipAdress, int* adrSize);
 
 static int sendData(char* data, unsigned int dataLenght);
 
