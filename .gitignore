@@ -1,6 +1,5 @@
 logs
 
-games/**/bot
 **/**/dist
 
 **/**/**.pyc
