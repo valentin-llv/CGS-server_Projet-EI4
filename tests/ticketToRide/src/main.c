@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "../../../client/src/api.h"
+#include "../../../client/src/gameHeaders/ticketToRide.h"
 
 int main() {
     // cgs.valentin-lelievre.com
@@ -18,7 +18,6 @@ int main() {
         GameSettings gameSettings = GameSettingsDefaults;
         gameSettings.gameType = TRAINNING;
         gameSettings.botId = RANDOM_PLAYER;
-        gameSettings.difficulty = 1;
         gameSettings.timeout = 15;
         gameSettings.starter = 2;
         gameSettings.seed = 0;

@@ -1,6 +1,6 @@
 CC = gcc
 
-SOURCES = src/main.c ../../client/src/api.c
+SOURCES = src/main.c ../../client/src/api.c ../../client/src/gameHeaders/ticketToRide.c
 OBJS = ${SOURCES:.c=.o}
 
 all: build clean run

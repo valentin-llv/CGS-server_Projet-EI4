@@ -35,20 +35,6 @@
 // Game headers
 #include "gameHeaders/ticketToRide.h"
 
-// API base headers
-#include "api.h"
-
-/*
-
-    Default values for struct
-
-    You can use those variables to initialize struct with default values
-
-*/
-
-const GameSettings GameSettingsDefaults = { TRAINNING, RANDOM_PLAYER, 1, 15, 0, 0, 0 };
-const GameData GameDataDefaults = { "", 0, 0, 0, 0, 0, 0 };
-
 /*
 
     Global vars
@@ -152,7 +138,6 @@ ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
     if(gameSettings.gameType >= GamesTypesMax || gameSettings.gameType <= 0) return PARAM_ERROR;
     if(gameSettings.botId >= BotsNamesMax || gameSettings.botId <= 0) return PARAM_ERROR;
 
-    if(gameSettings.difficulty > GameDifficultyMax || gameSettings.difficulty <= 0) return PARAM_ERROR;
     if(gameSettings.timeout > MAX_TIMEOUT || gameSettings.timeout < MIN_TIMEOUT) return PARAM_ERROR;
 
     if(gameSettings.starter != 0 && gameSettings.starter != 1 && gameSettings.starter != 2) return PARAM_ERROR;
@@ -164,8 +149,8 @@ ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
     // Check if malloc failed
     if(data == NULL) return MEMORY_ALLOCATION_ERROR;
 
-    int dataLenght = sprintf(data, "{ 'gameType': '%d', 'botId': '%d', 'difficulty': '%d', 'timeout': '%d', 'starter': '%d', 'seed': '%d', 'reconnect': '%d'}",
-    gameSettings.gameType, gameSettings.botId, gameSettings.difficulty, gameSettings.timeout, gameSettings.starter, gameSettings.seed, gameSettings.reconnect);
+    int dataLenght = sprintf(data, "{ 'gameType': '%d', 'botId': '%d', 'timeout': '%d', 'starter': '%d', 'seed': '%d', 'reconnect': '%d'}",
+    gameSettings.gameType, gameSettings.botId, gameSettings.timeout, gameSettings.starter, gameSettings.seed, gameSettings.reconnect);
 
     // Send data and check for succes
     if(!sendData(data, dataLenght)) return SERVER_ERROR;
