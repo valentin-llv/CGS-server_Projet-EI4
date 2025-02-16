@@ -59,6 +59,19 @@ int main() {
             } else {
                 printBoard();
 
+                BoardState boardState;
+                int resBoardSate = getBoardState(&boardState);
+
+                if(resBoardSate != ALL_GOOD) {
+                    printf("Error while getting board state, error code: %d\n", resBoardSate);
+                    return 1;
+                }
+
+                // Print visible cards
+                printf("Visible cards: ");
+                for(int i = 0; i < 5; i++) printf("%d ", boardState.card[i]);
+                printf("\n");
+
                 MoveData moveData;
                 
                 // Ask user for action

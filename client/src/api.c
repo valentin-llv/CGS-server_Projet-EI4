@@ -136,7 +136,6 @@ ResultCode sendName(char* name) {
 
 ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
     // Check user's provided data
-
     if(gameSettings.gameType >= GamesTypesMax || gameSettings.gameType <= 0) return printError(PARAM_ERROR);
     if(gameSettings.botId >= BotsNamesMax || gameSettings.botId <= 0) return printError(PARAM_ERROR);
 
@@ -152,9 +151,6 @@ ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
     if(data == NULL) return printError(MEMORY_ALLOCATION_ERROR);
 
     int dataLenght = verifyAndPackGameSettings(data, gameSettings);
-
-    // int dataLenght = sprintf(data, "{ 'gameType': '%d', 'botId': '%d', 'timeout': '%d', 'starter': '%d', 'seed': '%d', 'reconnect': '%d'}",
-    // gameSettings.gameType, gameSettings.botId, gameSettings.timeout, gameSettings.starter, gameSettings.seed, gameSettings.reconnect);
 
     // Send data and check for succes
     if(!sendData(data, dataLenght)) return printError(SERVER_ERROR);
@@ -278,6 +274,34 @@ ResultCode sendMove(MoveData* moveData, MoveResult* moveResult) {
 
     // Return success
     return ALL_GOOD;
+}
+
+ResultCode getBoardState(BoardState* boardState) {
+    // Parse data into json string
+    char* data = "{ 'action': 'getBoardState' }";
+
+    // Send data and check for success
+    if(!sendData(data, strlen(data))) return printError(SERVER_ERROR);
+
+    // Get server acknowledgement
+    char* string; jsmntok_t* tokens = (jsmntok_t *) malloc(BOARD_STATE_RESPONSE_JSON_SIZE * sizeof(jsmntok_t));
+
+    // Check if malloc failed
+    if(tokens == NULL) return printError(MEMORY_ALLOCATION_ERROR);
+
+    if(!getServerResponse(&string, tokens, BOARD_STATE_RESPONSE_JSON_SIZE)) return SERVER_ERROR;
+
+    // Call the function related to the selected game to properly unpack the data
+    int result = unpackGetBoardState(string, tokens, boardState);
+
+    if(result == -1) return printError(OTHER_ERROR);
+
+    free(string);
+    free(tokens);
+
+    // Return success
+    return ALL_GOOD;
+
 }
 
 // This function is used to send a message to your opponent during a game.

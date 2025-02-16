@@ -294,6 +294,9 @@ class TicketToRide(Game):
 			return self.whoWins()
 
 		return answer
+	
+	def getBoardState(self):
+		return " ".join(str(c) for c in self._deck.faceUp)
 
 	def getDataSize(self):
 		"""

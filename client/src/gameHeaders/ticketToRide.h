@@ -187,6 +187,12 @@ typedef struct MoveResult_ {
     char* message; // String containing a message send by the server
 } MoveResult;
 
+typedef struct boardState_ {
+    union {
+        CardColor card[5]; // Visible cards
+    };
+} BoardState;
+
 typedef enum {
     NORMAL_MOVE = 0x1,
     LOOSING_MOVE = 0x2,
@@ -245,6 +251,9 @@ ResultCode getMove(MoveData* moveData, MoveResult* moveResult);
 // You need to provide a MoveData struct containing your move and an empty MoveResult struct to store the result of the move returned by the server.
 ResultCode sendMove(MoveData* moveData, MoveResult* moveResult);
 
+// This function is used to get the current state of the board during a game.
+ResultCode getBoardState(BoardState* boardState);
+
 // This function is used to send a message to your opponent during a game.
 // You need to provide the message as a string. It should be less than 256 characters long.
 ResultCode sendMessage(char* message);
@@ -276,6 +285,8 @@ ResultCode quitGame();
 #define GET_MOVE_RESPONSE_JSON_SIZE 19
 #define SEND_MOVE_RESPONSE_JSON_SIZE 29
 
+#define BOARD_STATE_RESPONSE_JSON_SIZE 13
+
 #define FIRST_MSG_LENGTH 6
 
 // Json messages size, (nb of key * 2) + 1
@@ -294,6 +305,8 @@ int unpackGetMoveData(char* string, jsmntok_t* tokens, MoveData* moveData, MoveR
 
 int packSendMoveData(char* data, MoveData* moveData);
 int unpackSendMoveResult(char* string, jsmntok_t* tokens, MoveResult* moveResult);
+
+int unpackGetBoardState(char* string, jsmntok_t* tokens, BoardState* boardState);
 
 /*
 

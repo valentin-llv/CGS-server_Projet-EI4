@@ -108,9 +108,7 @@ int unpackGetMoveData(char* string, jsmntok_t* tokens, MoveData* moveData, MoveR
         default:
             return -1;
     }
-
-    // TODO: Fill the opponent move result data
-
+    
     return 1;
 }
 
@@ -158,6 +156,12 @@ int unpackSendMoveResult(char* string, jsmntok_t* tokens, MoveResult* moveResult
         default:
             return -1;
     }
+
+    return 1;
+}
+
+int unpackGetBoardState(char* string, jsmntok_t* tokens, BoardState* boardState) {
+    for(int i = 0; i < 5; i++) boardState->card[i] = (CardColor) atoi(&string[tokens[4 + i * 2].start]);
 
     return 1;
 }

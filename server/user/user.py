@@ -165,6 +165,8 @@ class User(Player, threading.Thread):
 
 		# Game events
 		elif event == "getMoveResponse":
+			# TODO: update to support dict
+
 			# print(f"Game sent {data}")
 
 			move = data["move"][0]
@@ -191,6 +193,8 @@ class User(Player, threading.Thread):
 
 			self.sendMsg(dict)
 		elif event == "sendMoveResponse":
+			# TODO: update to support dict
+
 			move = data["move"][0]
 
 			dict = { "state": 1, "move": move, "returnCode": data["returnCode"], "op_message": data["message"], "message": data["message"] }
@@ -214,6 +218,23 @@ class User(Player, threading.Thread):
 				dict["score3"] = ints[8]
 
 			# print(f"Sending {dict}")
+
+			self.sendMsg(dict)
+
+		elif event == "getBoardStateResponse":
+			# TODO: update to support dict
+
+			dict = { "state": 1 }
+
+			print(f"Board state: {data['boardState']}")
+
+			ints = [int(s) for s in data["boardState"].split() if s.isdigit()]
+
+			print(f"Ints: {ints}")
+
+			for i in range(0, len(ints)): dict["card" + str(i)] = ints[i]
+
+			print(f"Sending {dict}")
 
 			self.sendMsg(dict)
 
@@ -269,6 +290,13 @@ class User(Player, threading.Thread):
 				
 				# Send move to the game
 				self.game.event("sendMove", { "player": self, "actionData": actionData })
+
+			case "sendComment": # User send comment to the game
+				# TODO
+				pass
+
+			case "getBoardState":
+				self.game.event("getBoardState", { "player": self })
 
 			case "displayGame":
 				board = str(self.game).encode()

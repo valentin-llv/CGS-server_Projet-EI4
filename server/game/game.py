@@ -54,6 +54,7 @@ class Game(threading.Thread):
                     elif event == "sendMove": self.sendMove(data["player"], data)
                     elif event == "sendComment": self.sendComment(data["player"], data["comment"]) # TODO
                 else: data["player"].event("gameEnded", { "winner": self.winner })
+            elif event == "getBoardState": self.getBoardStateAction(data["player"])
             elif event == "playerDisconnected": self.playerDisconnected(data["player"])
             elif event == "reconnectPlayer": self.reconnectPlayer(data["player"], data["index"])
             elif event == "playerQuitGame": self.playerQuitGame(data["player"])
@@ -130,6 +131,11 @@ class Game(threading.Thread):
 		# self._comments.append(comment, nPlayer)
 
         pass
+
+    def getBoardStateAction(self, player):
+        boardState = self.getBoardState()
+
+        player.event("getBoardStateResponse", { "boardState": boardState })
 
     def nextPlayerTurn(self):
         self.whoPlays = 1 if self.whoPlays == 0 else 0
