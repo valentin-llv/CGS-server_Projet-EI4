@@ -19,13 +19,19 @@
 */
 
 const GameSettings GameSettingsDefaults = { TRAINNING, RANDOM_PLAYER, 1, 15, 0, 0 };
-const GameData GameDataDefaults = { "", 0, 0, 0, 0, 0, 0 };
+const GameData GameDataDefaults = { "", 0, 0, 0, 0 };
 
 /*
 
     Function
 
 */
+
+int verifyAndPackGameSettings(char* data, GameSettings gameSettings) {
+    int dataLength = sprintf(data, "{ 'gameType': %d, 'botId': %d, 'timeout': %d, 'starter': %d, 'seed': %d, 'reconnect': %d }", gameSettings.gameType, gameSettings.botId, gameSettings.timeout, gameSettings.starter, gameSettings.seed, gameSettings.reconnect);
+
+    return dataLength;
+}
 
 int packSendMoveData(char* data, MoveData* moveData) {
     int dataLength = 0;

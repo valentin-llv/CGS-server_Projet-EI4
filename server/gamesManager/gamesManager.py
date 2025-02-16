@@ -72,7 +72,7 @@ class GamesManager:
                 starter = 0 if int(gameSettings["starter"]) == 2 else (1 if int(gameSettings["starter"]) == 1 else None)
 
                 # Creating new game
-                newGame = GameRef.gameClass(user, bot, self.gameUidsCounter, start = starter, seed = int(gameSettings["seed"]), difficulty = int(gameSettings["difficulty"]))
+                newGame = GameRef.gameClass(user, bot, self.gameUidsCounter, start = starter, seed = int(gameSettings["seed"]))
                 newGame.start()
 
                 # Register the game to the bot

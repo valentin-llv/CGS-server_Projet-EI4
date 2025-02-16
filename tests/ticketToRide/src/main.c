@@ -6,7 +6,7 @@
 
 int main() {
     // cgs.valentin-lelievre.com
-    int result = connectToCGS("cgs.valentin-lelievre.com", 15001);
+    int result = connectToCGS("192.168.1.122", 15001);
 
     if(!result) return 1;
 
@@ -25,6 +25,9 @@ int main() {
 
         GameData gameData = GameDataDefaults;
         int result = sendGameSettings(gameSettings, &gameData);
+
+        printf("Game name: %s\n", gameData.gameName);
+
         if(result != ALL_GOOD) {
             printf("Error while creating game, error code: %d\n", result);
 

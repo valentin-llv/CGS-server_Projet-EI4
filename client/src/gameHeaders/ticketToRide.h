@@ -71,10 +71,17 @@
 
 /*
 
-    Structs
+    Debug: enable / disable debug mode
 
 */
 
+#define DEBUG 1 // Set to 1 to enable debug mode, 0 to disable
+
+/*
+
+    Structs
+
+*/
 
 typedef enum {
     TRAINNING = 0x1, // Play against a bot
@@ -107,9 +114,6 @@ typedef struct GameData_ {
     int gameSeed; // Contain the seed used for the game board generation (if you didn't provide one)
 
     int starter; // Defines who start, 1 you and 2 opponent
-
-    int boardWidth; // Length of board along X axis
-    int boardHeight; // Length of board along Y axis
 
     int nbElements; // Total number of elements on the board
     int* boardData; // Board data, an array containing unformatted board data
@@ -200,7 +204,6 @@ typedef enum {
     ALL_GOOD = 0x50
 } ResultCode;
 
-
 /*
 
     Default values for struct
@@ -218,17 +221,39 @@ extern const GameData GameDataDefaults;
 
 */
 
+// This is the first function you should call, it will connect you to the server.
+// You need to provide the server address and the port to connect to.
+// This is a blocking function, it will wait until the connection is established, it may take some time.
 ResultCode connectToCGS(char* adress, unsigned int port);
 
+// After connecting to the server you need to send your name to the server. It will be used to uniquely identify you.
+// You need to provide your name as a string. It should be less than 90 characters long.
 ResultCode sendName(char* name);
+
+// After sending your name you need to send game settings to the server to start a game.
+// You need to provide a GameSettings struct and a GameData struct to store the game data returned by the server.
+// You can use the GameSettingsDefaults and GameDataDefaults variables to initialize the struct with default values.
+// To fill the GameSettings struct you may want to use predefined constants available in api.h.
 ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData);
 
+// During a game this function is used to know what your opponent did during his turn.
+// You need to provide an empty MoveData struct and an empty MoveResult struct to store the move data returned by the server.
+// MoveData struct store the move your opponent did and MoveResult struct store the result of the move.
 ResultCode getMove(MoveData* moveData, MoveResult* moveResult);
+
+// During a game this function is used to send your move to the server.
+// You need to provide a MoveData struct containing your move and an empty MoveResult struct to store the result of the move returned by the server.
 ResultCode sendMove(MoveData* moveData, MoveResult* moveResult);
 
+// This function is used to send a message to your opponent during a game.
+// You need to provide the message as a string. It should be less than 256 characters long.
 ResultCode sendMessage(char* message);
+
+// This function is used to display the game board during a game.
+// It will print the colored board in the console.
 ResultCode printBoard();
 
+// This function is used to quit the currently running game.
 ResultCode quitGame();
 
 /*
@@ -237,16 +262,15 @@ ResultCode quitGame();
 
 */
 
-
 #define MAX_TIMEOUT 60 // in seconds
 #define MIN_TIMEOUT 5
 
 #define MAX_SEED 10000
 
 #define MAX_USERNAME_LENGTH 100
-
 #define MAX_MESSAGE_LENGTH 256
 
+#define GAME_SETTINGS_MAX_JSON_LENGTH 250
 #define PACKED_DATA_MAX_SIZE 400
 
 #define GET_MOVE_RESPONSE_JSON_SIZE 19
@@ -264,7 +288,10 @@ ResultCode quitGame();
 
 */
 
+int verifyAndPackGameSettings(char* data, GameSettings gameSettings);
+
 int unpackGetMoveData(char* string, jsmntok_t* tokens, MoveData* moveData, MoveResult* moveResult);
+
 int packSendMoveData(char* data, MoveData* moveData);
 int unpackSendMoveResult(char* string, jsmntok_t* tokens, MoveResult* moveResult);
 
@@ -292,5 +319,14 @@ static int readNBtye(char** buffer, int nbByte);
 
 static int getIntegerLength(int value);
 static int isValidIpAddress(char *ipAddress);
+
+/*
+
+    Debug functions
+
+*/
+
+ResultCode printError(ResultCode code);
+void printDebug(char* message, ...);
 
 #endif
