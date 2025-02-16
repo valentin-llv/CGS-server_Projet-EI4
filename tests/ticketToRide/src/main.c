@@ -47,6 +47,13 @@ int main() {
 
                 printf("Opponent action: %d\n", moveData.action);
 
+                // Print message and opponent message
+                if(moveResult.opponentMessage != NULL) {
+                    printf("Opponent message: %s\n", moveResult.opponentMessage);
+                }
+
+                printf("Message: %s\n", moveResult.message);
+
                 free(moveResult.opponentMessage);
                 free(moveResult.message);
 
@@ -137,6 +144,26 @@ int main() {
                     moveData.chooseObjectve.selectCard[2] = rand() % 2;
 
                     printf("Choose objectives %d %d %d\n", moveData.chooseObjectve.selectCard[0], moveData.chooseObjectve.selectCard[1], moveData.chooseObjectve.selectCard[2]);
+
+                    MoveResult moveResult;
+                    if(sendMove(&moveData, &moveResult) != ALL_GOOD) break;
+
+                    if(moveResult.state != NORMAL_MOVE) {
+                        printf("You loose\n");
+                        break;
+                    }
+                } else if (moveData.action == DRAW_CARD) {
+                    moveData.action = DRAW_CARD;
+
+                    MoveResult moveResult;
+                    if(sendMove(&moveData, &moveResult) != ALL_GOOD) break;
+
+                    if(moveResult.state != NORMAL_MOVE) {
+                        printf("You loose\n");
+                        break;
+                    }
+                } else if (moveData.action == DRAW_BLIND_CARD) {
+                    moveData.action = DRAW_BLIND_CARD;
 
                     MoveResult moveResult;
                     if(sendMove(&moveData, &moveResult) != ALL_GOOD) break;

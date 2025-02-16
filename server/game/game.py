@@ -34,6 +34,9 @@ class Game(threading.Thread):
 
         self.timers = []
 
+        # TODO : This should not be here
+        self.alternate = False
+
     def checkOptions(self, options):
         if "start" in options and options["start"] != None: self.whoPlays = options["start"]
         else: self.whoPlays = random.randrange(2)
@@ -63,11 +66,39 @@ class Game(threading.Thread):
     def getMove(self, player):
         # If player is a bot, force him to play a move
         if isinstance(self.players[self.whoPlays], Bot):
+            print("Bot playing move")
+
             move: str = self.players[self.whoPlays].playMove()
+
+            print(f"Bot played move {move}")
+
             result = self.updateGame(move)
 
+            print(f"Result: {result}")
+
             if int(move[0]) == 4:
+                print("Bot played move 4, bot replaying")
+
                 move: str = self.players[self.whoPlays].playMove()
+
+                print(f"Bot played move {move}")
+
+                result = self.updateGame(move)
+            elif int(move[0]) == 3:
+                print("Bot played move 3, bot replaying")
+
+                move: str = self.players[self.whoPlays].playMove()
+
+                print(f"Bot played move {move}")
+
+                result = self.updateGame(move)
+            elif int(move[0]) == 2:
+                print("Bot played move 2, bot replaying")
+
+                move: str = self.players[self.whoPlays].playMove()
+
+                print(f"Bot played move {move}")
+
                 result = self.updateGame(move)
 
             returnCode, message = result
@@ -106,7 +137,13 @@ class Game(threading.Thread):
         returnCode, message = self.updateGame(moveString)
         player.event("sendMoveResponse", { "returnCode": returnCode, "message": message, "move": moveString })
 
-        if int(str(move)) != 4:
+        if int(str(move)) == 3 or int(str(move)) == 2:
+            if self.alternate == True:
+                self.nextPlayerTurn()
+                self.alternate = False
+            else:
+                self.alternate = True
+        elif int(str(move)) != 4:
             self.nextPlayerTurn()
 
         if returnCode == LOSING_MOVE: # Game ended, player lost
