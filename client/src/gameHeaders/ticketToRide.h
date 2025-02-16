@@ -300,6 +300,7 @@ ResultCode quitGame();
 */
 
 int verifyAndPackGameSettings(char* data, GameSettings gameSettings);
+int unpackGameSettingsData(char* string, jsmntok_t* tokens, GameData* gameData);
 
 int unpackGetMoveData(char* string, jsmntok_t* tokens, MoveData* moveData, MoveResult* moveResult);
 

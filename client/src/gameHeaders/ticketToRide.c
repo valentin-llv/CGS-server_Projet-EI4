@@ -33,6 +33,12 @@ int verifyAndPackGameSettings(char* data, GameSettings gameSettings) {
     return dataLength;
 }
 
+int unpackGameSettingsData(char* string, jsmntok_t* tokens, GameData* gameData) {
+    // Nothing todo here for this game
+
+    return 1;
+}
+
 int packSendMoveData(char* data, MoveData* moveData) {
     int dataLength = 0;
 
@@ -108,7 +114,7 @@ int unpackGetMoveData(char* string, jsmntok_t* tokens, MoveData* moveData, MoveR
         default:
             return -1;
     }
-    
+
     return 1;
 }
 

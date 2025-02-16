@@ -200,6 +200,10 @@ ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
 
     gameData->boardData = boardData;
 
+    int result = unpackGameSettingsData(string, tokens, gameData);
+
+    if(result == -1) return printError(OTHER_ERROR);
+
     free(string);
     free(tokens);
 
