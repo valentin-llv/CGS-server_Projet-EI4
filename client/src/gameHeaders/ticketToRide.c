@@ -18,7 +18,7 @@
 
 */
 
-const GameSettings GameSettingsDefaults = { TRAINNING, RANDOM_PLAYER, 1, 15, 0, 0 };
+const GameSettings GameSettingsDefaults = { TRAINNING, RANDOM_PLAYER, 10, 0, 0, 0 };
 const GameData GameDataDefaults = { "", 0, 0, 0, 0 };
 
 /*

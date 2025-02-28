@@ -15,7 +15,7 @@
 
     1. How to use:
         To connect to the server and play a game you have to call (in order):
-            - int connectToCGS(char* adress, unsigned int port)
+            - int connectToCGS(char* address, unsigned int port)
             - int sendName(char* name)
             - int sendGameSettings(GameSettings gameSettings, GameData* gameData)
 
@@ -27,17 +27,17 @@
         To communicate actions to the server you can use CONSTANTS variables, defined
         in enum types below, instead of hex code values.
 
-        For exemple: use the TRAINNING constant instead of code 0x1. It will greatly improve code readability.
+        For exemple: use the TRAINING constant instead of code 0x1. It will greatly improve code readability.
 
     3. Defaults values for struct:
-        You can instanciate struct with pre-set default values by using:
+        You can instantiate struct with pre-set default values by using:
             - GameSettings gameSettings = GameSettingsDefaults;
             - GameData gameData = GameDataDefaults;
             - MoveData moveData = MoveDataDefaults;
 
         This will reduce potential errors and unexpected behaviours.
 
-    4. Every functions will return an int indicating the succes / failure of the function. 
+    4. Every function will return an int indicating the success / failure of the function.
         Possible error codes are:
             - 0x10: Param errors
             - 0x20: server / network errors
@@ -50,15 +50,15 @@
 
     5. Memory management:
         Some functions are using malloc calls to allocate memory space. You will need
-        to free thoses spaces.
+        to free those spaces.
 
-        Variables that need to be freeed are:
+        Variables that need to be freed are:
             - gameName from GameData struct
             - board from GameData struct
             - opponentMessage from MoveData struct
 
         NOTE: you are likely to create multiple instance of MoveData, don't forget
-        to free opponentMessage or you will likely encounter Segmentation fault error.
+        to free opponentMessage, or you will likely encounter Segmentation fault error.
 
 */
 
@@ -104,7 +104,7 @@ typedef struct GameSettings_ {
 
     unsigned int timeout; // Timeout in seconds, max value 60, default 15 (used only in training mode, tournament mode is set to 15)
     unsigned char starter; // Define who starts, 1 -> you or 2 -> opponent, set to 0 for random, default 0 (used only in training mode)
-    unsigned int seed; // Seed for the board generation, usefull when debuging to play the same game again, max value 9999, default to 0 for random (used only in training mode)
+    unsigned int seed; // Seed for the board generation, useful when debugging to play the same game again, max value 9999, default to 0 for random (used only in training mode)
     
     unsigned char reconnect; // Set 1 if you want to reconnect to a game you already started, default 0
 } GameSettings;
@@ -162,7 +162,7 @@ typedef struct DrawCardMove_ {
 } DrawCardMove;
 
 typedef struct ChooseObjectiveMove_ {
-    unsigned int selectCard[3]; // Set int to 0 to not take the i card or 1 take take it
+    unsigned int selectCard[3]; // Set int to 0 to not take the i card or 1 take it
 } ChooseObjectiveMove;
 
 typedef struct MoveData_ {
@@ -318,12 +318,12 @@ int unpackGetBoardState(char* string, jsmntok_t* tokens, BoardState* boardState)
 static ResultCode connectToSocket(char* adress, unsigned int port, unsigned int adrSize);
 static ResultCode dnsSearch(char* domain, char** ipAdress, int* adrSize);
 
-static int sendData(char* data, unsigned int dataLenght);
+static int sendData(char* data, unsigned int dataLength);
 
 static int getServerResponse(char** string, jsmntok_t* tokens, int nbTokens);
 static int getData(char** string, int* stringLength);
 
-static int readNBtye(char** buffer, int nbByte);
+static int readNByte(char** buffer, int nbByte);
 
 /*
 
