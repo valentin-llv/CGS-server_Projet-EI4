@@ -42,7 +42,9 @@
 
 */
 
-int SOCKET;
+int SOCKET = -1;     // socket descriptor
+int DEBUG = 0;      // Set to 1 to enable debug mode, 0 to disable (use `extern int debug = 1;`)
+
 
 /*
 

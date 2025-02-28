@@ -69,13 +69,7 @@
 #define JSMN_HEADER
 #include "../lib/json.h"
 
-/*
 
-    Debug: enable / disable debug mode
-
-*/
-
-#define DEBUG 1 // Set to 1 to enable debug mode, 0 to disable
 
 /*
 
