@@ -35,7 +35,7 @@
 
 // Game headers
 #include "gameHeaders/ticketToRide.h"
-
+#include "api.h"
 /*
 
     Global vars
@@ -44,6 +44,12 @@
 
 int SOCKET = -1;     // socket descriptor
 int DEBUG = 0;      // Set to 1 to enable debug mode, 0 to disable (use `extern int debug = 1;`)
+
+
+
+
+
+
 
 
 /*
@@ -59,7 +65,8 @@ int DEBUG = 0;      // Set to 1 to enable debug mode, 0 to disable (use `extern 
 // This is a blocking function, it will wait until the connection is established, it may take some time.
 
 ResultCode connectToCGS(char* address, unsigned int port) {
-    if(!port) return printError(PARAM_ERROR);
+    if(port<1000)
+        return printError(__FUNCTION__, PARAM_ERROR, "Invalid port value");
 
     char* ipaddress = NULL;
     int adrType = 0;
@@ -75,16 +82,15 @@ ResultCode connectToCGS(char* address, unsigned int port) {
             char* addressTypeName = (char *) malloc(5 * sizeof(char));
 
             // Check if malloc failed
-            if(addressTypeName == NULL) return printError(MEMORY_ALLOCATION_ERROR);
+            if(addressTypeName == NULL)
+                return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
-            if(adrType == AF_INET) sprintf(addressTypeName, "IPv4");
-            else sprintf(addressTypeName, "IPv6");
+            sprintf(addressTypeName, (adrType == AF_INET)? "IPv4": "IPv6");
             
-            printDebug("\x1b[1;32mDomain name %s resolved into an %s address: %s\x1b[0m\n", address, addressTypeName, ipaddress);
+            printDebug(__FUNCTION__, "Domain name %s resolved into an %s address: %s", address, addressTypeName, ipaddress);
             free(addressTypeName);
         } else {
-            printDebug("\x1b[1;31mDomain name %s failed to resolve into an IP address\x1b[0m\n", address);
-            return printError(PARAM_ERROR);
+            return printError(__FUNCTION__,PARAM_ERROR,  "Domain name %s failed to resolve into an IP address", address);
         }
     } else adrType = ipVerificationResult;
 
@@ -93,7 +99,8 @@ ResultCode connectToCGS(char* address, unsigned int port) {
         free(ipaddress);
 
         return result;
-    } else return connectToSocket(address, port, adrType);
+    }
+    return connectToSocket(address, port, adrType);
 }
 
 // After connecting to the server you need to send your name to the server. It will be used to uniquely identify you.
@@ -101,28 +108,35 @@ ResultCode connectToCGS(char* address, unsigned int port) {
 
 ResultCode sendName(char* name) {
     // Check user's provided data, max name length is 90 characters
-    if(strlen(name) >= MAX_USERNAME_LENGTH) return printError(PARAM_ERROR);
+    if(strlen(name) >= MAX_USERNAME_LENGTH)
+        return printError(__FUNCTION__, PARAM_ERROR, "Name too long");
 
     // Parse data into json string
     char* data = (char *) malloc((MAX_USERNAME_LENGTH + 20) * sizeof(char));
 
     // Check if malloc failed
-    if(data == NULL) return printError(MEMORY_ALLOCATION_ERROR);
+    if(data == NULL) return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
     // Fill data with name
     int dataLength = sprintf(data, "{ 'name': '%s' }", name);
 
     // Send data and check for success
-    if(!sendData(data, dataLength)) return printError(SERVER_ERROR);
+    if(!sendData(data, dataLength))
+        return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
+        //TODO: sendData never returns 0 (it returns -1 when fails)
+        //-> change sendData and check every call
     free(data);
     
     // Get server acknowledgement
-    char* string; jsmntok_t* tokens = (jsmntok_t *) malloc(SERVER_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
+    char* string;
+    jsmntok_t* tokens = (jsmntok_t *) malloc(SERVER_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
 
     // Check if malloc failed
-    if(tokens == NULL) return printError(MEMORY_ALLOCATION_ERROR);
+    if(tokens == NULL)
+        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
-    if(!getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) return printError(SERVER_ERROR);
+    if(!getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE))
+        return printError(__FUNCTION__, SERVER_ERROR, "Server response failed");
 
     free(string);
     free(tokens);
@@ -138,33 +152,37 @@ ResultCode sendName(char* name) {
 
 ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
     // Check user's provided data
-    if(gameSettings.gameType >= GamesTypesMax || gameSettings.gameType <= 0) return printError(PARAM_ERROR);
-    if(gameSettings.botId >= BotsNamesMax || gameSettings.botId <= 0) return printError(PARAM_ERROR);
-
-    if(gameSettings.timeout > MAX_TIMEOUT || gameSettings.timeout < MIN_TIMEOUT) return printError(PARAM_ERROR);
-
-    if(gameSettings.starter != 0 && gameSettings.starter != 1 && gameSettings.starter != 2) return printError(PARAM_ERROR);
-    if(gameSettings.seed > MAX_SEED || gameSettings.seed < 0) return printError(PARAM_ERROR);
+    if(gameSettings.gameType >= GamesTypesMax || gameSettings.gameType <= 0)
+        return printError(__FUNCTION__, PARAM_ERROR, "Invalid game type");
+    if(gameSettings.botId >= BotsNamesMax || gameSettings.botId <= 0)
+        return printError(__FUNCTION__, PARAM_ERROR, "Invalid bot id");
+    if(gameSettings.timeout > MAX_TIMEOUT || gameSettings.timeout < MIN_TIMEOUT)
+        return printError(__FUNCTION__, PARAM_ERROR, "Invalid timeout value");
+    if(gameSettings.starter != 0 && gameSettings.starter != 1 && gameSettings.starter != 2)
+        return printError(__FUNCTION__, PARAM_ERROR, "Invalid starter value");
+    if(gameSettings.seed > MAX_SEED)
+        return printError(__FUNCTION__, PARAM_ERROR, "Invalid seed value");
     
     // Parse data into json string
     char* data = (char *) malloc(GAME_SETTINGS_MAX_JSON_LENGTH * sizeof(char));
-
-    // Check if malloc failed
-    if(data == NULL) return printError(MEMORY_ALLOCATION_ERROR);
+    if(data == NULL)
+        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR,"");
 
     int dataLength = verifyAndPackGameSettings(data, gameSettings);
 
     // Send data and check for success
-    if(!sendData(data, dataLength)) return printError(SERVER_ERROR);
+    if(!sendData(data, dataLength))
+        return printError(__FUNCTION__, SERVER_ERROR, "");
     free(data);
 
     // Get server acknowledgement
-    char* string; jsmntok_t* tokens = (jsmntok_t *) malloc(GAME_SETTINGS_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
+    char* string;
+    jsmntok_t* tokens = (jsmntok_t *) malloc(GAME_SETTINGS_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
+    if(tokens == NULL)
+        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
-    // Check if malloc failed
-    if(tokens == NULL) return printError(MEMORY_ALLOCATION_ERROR);
-
-    if(!getServerResponse(&string, tokens, GAME_SETTINGS_ACKNOWLEDGEMENT_JSON_SIZE)) return printError(SERVER_ERROR);
+    if(!getServerResponse(&string, tokens, GAME_SETTINGS_ACKNOWLEDGEMENT_JSON_SIZE))
+        return printError(__FUNCTION__, SERVER_ERROR, "Server response failed");
 
     // TODO create special unpack game settings function
 
@@ -174,9 +192,8 @@ ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
     // Load received data into struct
     int blockLength = tokens[4].end - tokens[4].start + 1;
     char* gameName = (char *) malloc(blockLength * sizeof(char));
-
-    // Check if malloc failed
-    if(gameName == NULL) return printError(MEMORY_ALLOCATION_ERROR);
+    if(gameName == NULL)
+        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
     sprintf(gameName, "%.*s", blockLength - 1, &string[tokens[4].start]);
     gameData->gameName = gameName;
@@ -188,23 +205,21 @@ ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
 
     blockLength = tokens[16].end - tokens[16].start + 1;
     int* boardData = (int *) malloc(blockLength * sizeof(int));
-
-    // Check if malloc failed
-    if(boardData == NULL) return printError(MEMORY_ALLOCATION_ERROR);
+    if(boardData == NULL)
+        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
     int i = 0; int j = 0;
     while((j + i) < blockLength - 1) {
         boardData[i] = atoi(&string[tokens[16].start + j + i]);
-
-        j = j + getIntegerLength(boardData[i]);
+        j += getIntegerLength(boardData[i]);
         i ++;
     }
 
     gameData->boardData = boardData;
 
     int result = unpackGameSettingsData(string, tokens, gameData);
-
-    if(result == -1) return printError(OTHER_ERROR);
+    if(result == -1)
+        return printError(__FUNCTION__, OTHER_ERROR, "Failed to unpack game settings");
 
     free(string);
     free(tokens);
@@ -222,20 +237,23 @@ ResultCode getMove(MoveData* moveData, MoveResult* moveResult) {
     char* data = "{ 'action': 'getMove' }";
 
     // Send data and check for success
-    if(!sendData(data, strlen(data))) return printError(SERVER_ERROR);
+    if(!sendData(data, strlen(data)))
+        return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
 
     // Get server acknowledgement
-    char* string; jsmntok_t* tokens = (jsmntok_t *) malloc(SEND_MOVE_RESPONSE_JSON_SIZE * sizeof(jsmntok_t));
+    char* string;
+    jsmntok_t* tokens = (jsmntok_t *) malloc(SEND_MOVE_RESPONSE_JSON_SIZE * sizeof(jsmntok_t));
+    if(tokens == NULL)
+        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
-    // Check if malloc failed
-    if(tokens == NULL) return printError(MEMORY_ALLOCATION_ERROR);
-
-    if(!getServerResponse(&string, tokens, SEND_MOVE_RESPONSE_JSON_SIZE)) return SERVER_ERROR;
+    if(!getServerResponse(&string, tokens, SEND_MOVE_RESPONSE_JSON_SIZE))
+        return printError(__FUNCTION__, SERVER_ERROR, "Server response failed");
 
     // Call the function related to the selected game to properly unpack the data
     int result = unpackGetMoveData(string, tokens, moveData, moveResult);
 
-    if(result == -1) return printError(OTHER_ERROR);
+    if(result == -1)
+        return printError(__FUNCTION__, OTHER_ERROR, "Failed to unpack move data");
 
     free(string);
     free(tokens);
@@ -250,30 +268,31 @@ ResultCode getMove(MoveData* moveData, MoveResult* moveResult) {
 ResultCode sendMove(MoveData* moveData, MoveResult* moveResult) {
     // Parse data into json string
     char* data = (char *) malloc(PACKED_DATA_MAX_SIZE * sizeof(char));
-
-    // Check if malloc failed
-    if(data == NULL) return printError(MEMORY_ALLOCATION_ERROR);
+    if(data == NULL)
+        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
     // Call the function related to the selected game to properly pack the data
     int dataLength = packSendMoveData(data, moveData);
-
-    // Check if pack failed
-    if(dataLength == -1) return printError(OTHER_ERROR);
+    if(dataLength == -1)
+        return printError(__FUNCTION__, OTHER_ERROR, "Failed to send move data");
 
     // Send data and check for success
-    if(!sendData(data, dataLength)) return printError(SERVER_ERROR);
+    if(!sendData(data, dataLength))
+        return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
     free(data);
 
     // Get server acknowledgement
-    char* string; jsmntok_t* tokens = (jsmntok_t *) malloc(SEND_MOVE_RESPONSE_JSON_SIZE * sizeof(jsmntok_t));
+    char* string;
+    jsmntok_t* tokens = (jsmntok_t *) malloc(SEND_MOVE_RESPONSE_JSON_SIZE * sizeof(jsmntok_t));
+    if(tokens == NULL)
+        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
-    // Check if malloc failed
-    if(tokens == NULL) return printError(MEMORY_ALLOCATION_ERROR);
-
-    if(!getServerResponse(&string, tokens, SEND_MOVE_RESPONSE_JSON_SIZE)) return printError(SERVER_ERROR);
+    if(!getServerResponse(&string, tokens, SEND_MOVE_RESPONSE_JSON_SIZE))
+        return printError(__FUNCTION__, SERVER_ERROR, "Server response failed");
 
     int result = unpackSendMoveResult(string, tokens, moveResult);
-    if(result == -1) return printError(OTHER_ERROR);
+    if(result == -1)
+        return printError(__FUNCTION__, OTHER_ERROR, "Failed to unpack move data");
 
     free(string);
     free(tokens);
@@ -287,20 +306,22 @@ ResultCode getBoardState(BoardState* boardState) {
     char* data = "{ 'action': 'getBoardState' }";
 
     // Send data and check for success
-    if(!sendData(data, strlen(data))) return printError(SERVER_ERROR);
+    if(!sendData(data, strlen(data)))
+        return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
 
     // Get server acknowledgement
-    char* string; jsmntok_t* tokens = (jsmntok_t *) malloc(BOARD_STATE_RESPONSE_JSON_SIZE * sizeof(jsmntok_t));
+    char* string;
+    jsmntok_t* tokens = (jsmntok_t *) malloc(BOARD_STATE_RESPONSE_JSON_SIZE * sizeof(jsmntok_t));
+    if(tokens == NULL)
+        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
-    // Check if malloc failed
-    if(tokens == NULL) return printError(MEMORY_ALLOCATION_ERROR);
-
-    if(!getServerResponse(&string, tokens, BOARD_STATE_RESPONSE_JSON_SIZE)) return SERVER_ERROR;
+    if(!getServerResponse(&string, tokens, BOARD_STATE_RESPONSE_JSON_SIZE))
+        return printError(__FUNCTION__, SERVER_ERROR, "Server response failed");
 
     // Call the function related to the selected game to properly unpack the data
     int result = unpackGetBoardState(string, tokens, boardState);
-
-    if(result == -1) return printError(OTHER_ERROR);
+    if(result == -1)
+        return printError(__FUNCTION__, OTHER_ERROR, "Failed to unpack board state");
 
     free(string);
     free(tokens);
@@ -315,27 +336,29 @@ ResultCode getBoardState(BoardState* boardState) {
 
 ResultCode sendMessage(char* message) {
     // Check user's provided data
-    if(strlen(message) >= MAX_MESSAGE_LENGTH) return printError(PARAM_ERROR);
+    if(strlen(message) >= MAX_MESSAGE_LENGTH)
+        return printError(__FUNCTION__, PARAM_ERROR, "Message too long");
 
     // Parse data into json string
     char* data = (char *) malloc((MAX_MESSAGE_LENGTH + 50) * sizeof(char));
-
-    // Check if malloc failed
-    if(data == NULL) return printError(MEMORY_ALLOCATION_ERROR);
+    if(data == NULL)
+        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
     int dataLength = sprintf(data, "{ 'action': 'sendMessage', 'message': '%s' }", message);
 
     // Send data and check for success
-    if(!sendData(data, dataLength)) return printError(SERVER_ERROR);
+    if(!sendData(data, dataLength))
+        return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
     free(data);
 
     // Get server acknowledgement
-    char* string; jsmntok_t* tokens = (jsmntok_t *) malloc(SERVER_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
+    char* string;
+    jsmntok_t* tokens = (jsmntok_t *) malloc(SERVER_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
+    if(tokens == NULL)
+        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
-    // Check if malloc failed
-    if(tokens == NULL) return printError(MEMORY_ALLOCATION_ERROR);
-
-    if(!getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) return printError(SERVER_ERROR);
+    if(!getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE))
+        return printError(__FUNCTION__, SERVER_ERROR, "Server response failed");
 
     free(string);
     free(tokens);
@@ -352,21 +375,22 @@ ResultCode printBoard() {
     char* data = "{ 'action': 'displayGame' }";
 
     // Send data and check for success
-    if(!sendData(data, strlen(data))) return printError(SERVER_ERROR);
+    if(!sendData(data, strlen(data)))
+        return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
 
     // Get server acknowledgement
-    char* string; jsmntok_t* tokens = (jsmntok_t *) malloc(SERVER_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
+    char* string;
+    jsmntok_t* tokens = (jsmntok_t *) malloc(SERVER_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
+    if(tokens == NULL)
+        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
-    // Check if malloc failed
-    if(tokens == NULL) return printError(MEMORY_ALLOCATION_ERROR);
-
-    if(!getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) return printError(SERVER_ERROR);
+    if(!getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE))
+        return printError(__FUNCTION__, SERVER_ERROR, "Server response failed");
 
     int blockLength = atoi(&string[tokens[4].start]) + 1;
     char* buffer = (char *) malloc(blockLength * sizeof(char));
-
-    // Check if malloc failed
-    if(buffer == NULL) return printError(MEMORY_ALLOCATION_ERROR);
+    if(buffer == NULL)
+        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
     // Fill buffer with 0
     memset(buffer, 0, blockLength * sizeof(char));
@@ -375,7 +399,8 @@ ResultCode printBoard() {
     int res = readNByte(&buffer, blockLength - 1);
 
     // Check for error
-    if(res == -1) return printError(OTHER_ERROR);
+    if(res == -1)
+        return printError(__FUNCTION__, OTHER_ERROR, "Failed to read data");
 
     // Print the board
     printf("%s\n", buffer);
@@ -388,22 +413,24 @@ ResultCode printBoard() {
     return ALL_GOOD;
 }
 
-// This function is used to quit the currently running game.
 
+// This function is used to quit the currently running game.
 ResultCode quitGame() {
     // Parse data into json string
     char* data = "{ 'action': 'quitGame' }";
 
     // Send data and check for success
-    if(!sendData(data, strlen(data))) return printError(SERVER_ERROR);
+    if(!sendData(data, strlen(data)))
+        return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
 
     // Get server acknowledgement
-    char* string; jsmntok_t* tokens = (jsmntok_t *) malloc(SERVER_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
+    char* string;
+    jsmntok_t* tokens = (jsmntok_t *) malloc(SERVER_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
+    if(tokens == NULL)
+        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
-    // Check if malloc failed
-    if(tokens == NULL) return printError(MEMORY_ALLOCATION_ERROR);
-
-    if(!getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) return printError(SERVER_ERROR);
+    if(!getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE))
+        return printError(__FUNCTION__, SERVER_ERROR, "Server response failed");
 
     free(string);
     free(tokens);
@@ -414,6 +441,8 @@ ResultCode quitGame() {
     return ALL_GOOD;
 }
 
+
+
 /*
 
     Hidden functions
@@ -423,51 +452,42 @@ ResultCode quitGame() {
 
 */
 
-static ResultCode connectToSocket(char* address, unsigned int port, unsigned int adrType) {
+static ResultCode connectToSocket(const char *address, unsigned int port, unsigned int adrType) {
     int soc = socket(adrType, SOCK_STREAM, 0); // Use TCP socket
-    if (soc < 0) {
-        printDebug("\x1b[1;31mSocket creation failed\x1b[0m\n");
-        return printError(OTHER_ERROR);
-    }
+    if (soc < 0)
+        return printError(__FUNCTION__, OTHER_ERROR, "Socket creation failed");
 
     struct sockaddr_in serv_addr;
     serv_addr.sin_family = adrType;
     serv_addr.sin_port = htons(port);
 
     int res = inet_pton(adrType, address, &serv_addr.sin_addr);
-    if (res <= 0) {
-        printDebug("\x1b[1;31mInvalid address / address not supported\x1b[0m\n");
-        return printError(PARAM_ERROR);
-    }
+    if (res <= 0)
+        return printError(__FUNCTION__, PARAM_ERROR, "Invalid address / address not supported");
 
     int status = connect(soc, (struct sockaddr*) &serv_addr, sizeof(serv_addr));
-    if (status < 0) {
-        printDebug("\x1b[1;31mConnection to server failed\x1b[0m: %s [code = %d]\n", strerror(errno), errno);
-        return printError(SERVER_ERROR);
-    }
+    if (status < 0)
+        return printError(__FUNCTION__, SERVER_ERROR, "Connection to server failed: %s [code = %d]", strerror(errno), errno);
 
     SOCKET = soc;
     return ALL_GOOD;
 }
 
-static ResultCode dnsSearch(char* domain, char** ipaddress, int* adrType) {
+static ResultCode dnsSearch(const char *domain, char** ipaddress, int* adrType) {
     // Do a DNS search to resolve domain name
     struct addrinfo* dnsResult = NULL;
     int result = getaddrinfo(domain, 0, 0, &dnsResult);
 
-    if(result != 0) {
-        printDebug("\x1b[1;31mDNS search failed\x1b[0m\n");
-        return printError(OTHER_ERROR);
-    }
+    if(result != 0)
+        return printError(__FUNCTION__, OTHER_ERROR, "DNS search failed");
 
     // Get IP address type
     *adrType = dnsResult->ai_addr->sa_family;
 
     int adrSize = *adrType == AF_INET ? INET_ADDRSTRLEN : INET6_ADDRSTRLEN;
     *ipaddress = (char *) malloc(adrSize * sizeof(char));
-
-    // Check if malloc failed
-    if(*ipaddress == NULL) return printError(MEMORY_ALLOCATION_ERROR);
+    if(*ipaddress == NULL)
+        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
     // Convert IP address to string
     if(dnsResult->ai_addr->sa_family == AF_INET) { // IPV4 address found
@@ -490,7 +510,8 @@ static int sendData(char* data, unsigned int dataLength) {
     if(dataBlock1 == NULL) return -1;
 
     // Fill string with spaces
-    for(int i = 0; i < FIRST_MSG_LENGTH; i++) dataBlock1[i] = ' ';
+    for(int i = 0; i < FIRST_MSG_LENGTH; i++)
+        dataBlock1[i] = ' ';
 
     // Fill string with the length of the next message
     sprintf(dataBlock1, "%d", dataLength);
@@ -528,7 +549,7 @@ static int getServerResponse(char** string, jsmntok_t* tokens, int nbTokens) {
     // Print error if needed
     if(!state) {
         int blockLength = tokens[4].end - tokens[4].start;
-        printDebug("\x1b[1;31mServer responded with following error:\x1b[0m \x1b[3m%.*s\x1b[23m\n", blockLength, (*string + tokens[4].start));
+        printError(__FUNCTION__, SERVER_ERROR, "Server responded with following error: %.*s\n", blockLength, (*string + tokens[4].start));
         return -1;
     }
 
@@ -622,33 +643,44 @@ static int isValidIpAddress(char *ipAddress) {
 
 */
 
-ResultCode printError(ResultCode code) {
+ResultCode printError(const char* function, ResultCode code, const char* message, ...) {
+    /* print error code */
     switch(code) {
         case PARAM_ERROR:
-            printDebug("\x1b[1;31mError: Invalid parameters\x1b[0m\n");
+            printf("\x1b[1;31m[%s] Error: Invalid parameters\x1b[0m\n", function);
             break;
         case SERVER_ERROR:
-            printDebug("\x1b[1;31mError: Server error\x1b[0m\n");
+            printf("\x1b[1;31m[%s] Error: Server error\x1b[0m\n", function);
             break;
         case MEMORY_ALLOCATION_ERROR:
-            printDebug("\x1b[1;31mError: Memory allocation failed\x1b[0m\n");
+            printf("\x1b[1;31m[%s] Error: Memory allocation failed\x1b[0m\n", function);
             break;
         case OTHER_ERROR:
-            printDebug("\x1b[1;31mError: Unknown error\x1b[0m\n");
+            printf("\x1b[1;31m[%s] Error: Unknown error\x1b[0m\n", function);
             break;
         default:
-            printDebug("\x1b[1;31mError: Unknown error code\x1b[0m\n");
+            printf("\x1b[1;31m[%s] Error: Unknown error code\x1b[0m\n", function);
             break;
     }
-
+    /* and extra message if given */
+    if (*message) {
+        va_list args;
+        va_start(args, message);
+        printf("\x1b[1;\xAF");
+        vprintf(message, args);
+        printf("\x1b[0m\n");
+        va_end(args);
+    }
     return code;
 }
 
-void printDebug(char* message, ...) {
+void printDebug(const char* function, const char* message, ...) {
     if(DEBUG) {
         va_list args;
         va_start(args, message);
+        printf("\x1b[1;32m[%s] ", function);
         vprintf(message, args);
+        printf("\x1b[0m\n");
         va_end(args);
     }
 }

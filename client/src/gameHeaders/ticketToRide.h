@@ -65,20 +65,14 @@
 #ifndef TICKET_TO_RIDE_H
 #define TICKET_TO_RIDE_H
 
-// This define is used by the JSON library
-#define JSMN_HEADER
-#include "../lib/json.h"
-
-
+#include <stdbool.h>
 
 /*
-
     Structs
-
 */
 
 typedef enum {
-    TRAINNING = 0x1, // Play against a bot
+    TRAINING = 0x1, // Play against a bot
     MATCH = 0x2, // Play against a player
     TOURNAMENT = 0x3, // Enter a tournament
 
@@ -92,7 +86,7 @@ typedef enum {
     BotsNamesMax // Keep as last element
 } BotsNames;
 
-typedef struct GameSettings_ {
+typedef struct {
     GamesType gameType; // One of GamesTypes values
     BotsNames botId; // One of BotsName values (only if you play in training)
 
@@ -103,10 +97,9 @@ typedef struct GameSettings_ {
     unsigned char reconnect; // Set 1 if you want to reconnect to a game you already started, default 0
 } GameSettings;
 
-typedef struct GameData_ {
+typedef struct {
     char* gameName; // String containing the game name
     int gameSeed; // Contain the seed used for the game board generation (if you didn't provide one)
-
     int starter; // Defines who start, 1 you and 2 opponent
 
     int nbElements; // Total number of elements on the board
@@ -114,7 +107,7 @@ typedef struct GameData_ {
 } GameData;
 
 typedef enum {
-    CLAIM_ROUTE = 0x1,
+    CLAIM_ROUTE = 0x1,  // Claim a route between two cities
 
     DRAW_BLIND_CARD, // Draw a card from the deck
     DRAW_CARD, // Draw a card from the visible cards
@@ -136,14 +129,14 @@ typedef enum {
 	LOCOMOTIVE
 } CardColor;
 
-typedef struct Objective_ {
+typedef struct {
     unsigned int from;
     unsigned int to;
 
     unsigned int score;
 } Objective;
 
-typedef struct ClaimRouteMove_ {
+typedef struct {
     unsigned int from;
     unsigned int to;
 
@@ -151,15 +144,15 @@ typedef struct ClaimRouteMove_ {
     unsigned int nbLocomotives;
 } ClaimRouteMove;
 
-typedef struct DrawCardMove_ {
+typedef struct {
     CardColor card;
 } DrawCardMove;
 
-typedef struct ChooseObjectiveMove_ {
-    unsigned int selectCard[3]; // Set int to 0 to not take the i card or 1 take it
+typedef struct {
+    bool selectCard[3];     // Set to false to not take the i card or true take it
 } ChooseObjectiveMove;
 
-typedef struct MoveData_ {
+typedef struct {
     Action action; // One of Actions values
 
     union {
@@ -181,7 +174,7 @@ typedef struct MoveResult_ {
     char* message; // String containing a message send by the server
 } MoveResult;
 
-typedef struct boardState_ {
+typedef struct {
     union {
         CardColor card[5]; // Visible cards
     };
@@ -204,6 +197,7 @@ typedef enum {
     ALL_GOOD = 0x50
 } ResultCode;
 
+
 /*
 
     Default values for struct
@@ -224,7 +218,7 @@ extern const GameData GameDataDefaults;
 // This is the first function you should call, it will connect you to the server.
 // You need to provide the server address and the port to connect to.
 // This is a blocking function, it will wait until the connection is established, it may take some time.
-ResultCode connectToCGS(char* adress, unsigned int port);
+ResultCode connectToCGS(char* address, unsigned int port);
 
 // After connecting to the server you need to send your name to the server. It will be used to uniquely identify you.
 // You need to provide your name as a string. It should be less than 90 characters long.
@@ -259,82 +253,5 @@ ResultCode printBoard();
 // This function is used to quit the currently running game.
 ResultCode quitGame();
 
-/*
-
-    Constants
-
-*/
-
-#define MAX_TIMEOUT 60 // in seconds
-#define MIN_TIMEOUT 5
-
-#define MAX_SEED 10000
-
-#define MAX_USERNAME_LENGTH 100
-#define MAX_MESSAGE_LENGTH 256
-
-#define GAME_SETTINGS_MAX_JSON_LENGTH 250
-#define PACKED_DATA_MAX_SIZE 400
-
-#define GET_MOVE_RESPONSE_JSON_SIZE 19
-#define SEND_MOVE_RESPONSE_JSON_SIZE 29
-
-#define BOARD_STATE_RESPONSE_JSON_SIZE 13
-
-#define FIRST_MSG_LENGTH 6
-
-// Json messages size, (nb of key * 2) + 1
-#define SERVER_ACKNOWLEDGEMENT_JSON_SIZE 5
-#define GAME_SETTINGS_ACKNOWLEDGEMENT_JSON_SIZE 19
-
-/*
-
-    Game specific functions prototypes
-
-*/
-
-int verifyAndPackGameSettings(char* data, GameSettings gameSettings);
-int unpackGameSettingsData(char* string, jsmntok_t* tokens, GameData* gameData);
-
-int unpackGetMoveData(char* string, jsmntok_t* tokens, MoveData* moveData, MoveResult* moveResult);
-
-int packSendMoveData(char* data, MoveData* moveData);
-int unpackSendMoveResult(char* string, jsmntok_t* tokens, MoveResult* moveResult);
-
-int unpackGetBoardState(char* string, jsmntok_t* tokens, BoardState* boardState);
-
-/*
-
-    Hidden functions
-
-*/
-
-static ResultCode connectToSocket(char* adress, unsigned int port, unsigned int adrSize);
-static ResultCode dnsSearch(char* domain, char** ipAdress, int* adrSize);
-
-static int sendData(char* data, unsigned int dataLength);
-
-static int getServerResponse(char** string, jsmntok_t* tokens, int nbTokens);
-static int getData(char** string, int* stringLength);
-
-static int readNByte(char** buffer, int nbByte);
-
-/*
-
-    Utils functions
-
-*/
-
-static int getIntegerLength(int value);
-static int isValidIpAddress(char *ipAddress);
-
-/*
-
-    Debug functions
-
-*/
-
-ResultCode printError(ResultCode code);
-void printDebug(char* message, ...);
 
 #endif
