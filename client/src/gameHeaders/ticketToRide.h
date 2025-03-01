@@ -72,6 +72,23 @@
 */
 
 typedef enum {
+    PARAM_ERROR = 0x10,
+    SERVER_ERROR = 0x20,
+    OTHER_ERROR = 0x30,
+    MEMORY_ALLOCATION_ERROR = 0x40,
+    ALL_GOOD = 0x50
+} ResultCode;
+
+typedef enum {
+    NO_DEBUG = 0x0,
+    STOP_ON_ERROR = 0x1,
+    MESSAGE = 0x2,
+    DEBUG = 0x3,
+    INTERN_DEBUG = 0x4
+} DebugLevel;
+
+
+typedef enum {
     TRAINING = 0x1, // Play against a bot
     MATCH = 0x2, // Play against a player
     TOURNAMENT = 0x3, // Enter a tournament
@@ -189,13 +206,7 @@ typedef enum {
     StateMax // Keep as last element
 } MoveState;
 
-typedef enum {
-    PARAM_ERROR = 0x10,
-    SERVER_ERROR = 0x20,
-    OTHER_ERROR = 0x30,
-    MEMORY_ALLOCATION_ERROR = 0x40,
-    ALL_GOOD = 0x50
-} ResultCode;
+
 
 
 /*

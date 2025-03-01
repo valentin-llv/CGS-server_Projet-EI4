@@ -43,7 +43,7 @@
 */
 
 int SOCKET = -1;     // socket descriptor
-int DEBUG = 0;      // Set to 1 to enable debug mode, 0 to disable (use `extern int debug = 1;`)
+int DEBUG_LEVEL = NO_DEBUG;      // Set to 1 to enable debug mode, 0 to disable (use `extern int debug = 1;`)
 
 
 
@@ -87,7 +87,7 @@ ResultCode connectToCGS(char* address, unsigned int port) {
 
             sprintf(addressTypeName, (adrType == AF_INET)? "IPv4": "IPv6");
             
-            printDebug(__FUNCTION__, "Domain name %s resolved into an %s address: %s", address, addressTypeName, ipaddress);
+            printDebugMessage(__FUNCTION__, MESSAGE, "Domain name %s resolved into an %s address: %s", address, addressTypeName, ipaddress);
             free(addressTypeName);
         } else {
             return printError(__FUNCTION__,PARAM_ERROR,  "Domain name %s failed to resolve into an IP address", address);
@@ -647,38 +647,42 @@ ResultCode printError(const char* function, ResultCode code, const char* message
     /* print error code */
     switch(code) {
         case PARAM_ERROR:
-            printf("\x1b[1;31m[%s] Error: Invalid parameters\x1b[0m\n", function);
+            printf("\x1b[1;31m[%s] Invalid parameters\x1b[0m\n", function);
             break;
         case SERVER_ERROR:
-            printf("\x1b[1;31m[%s] Error: Server error\x1b[0m\n", function);
+            printf("\x1b[1;31m[%s] Server error\x1b[0m\n", function);
             break;
         case MEMORY_ALLOCATION_ERROR:
-            printf("\x1b[1;31m[%s] Error: Memory allocation failed\x1b[0m\n", function);
+            printf("\x1b[1;31m[%s] Memory allocation failed\x1b[0m\n", function);
             break;
         case OTHER_ERROR:
-            printf("\x1b[1;31m[%s] Error: Unknown error\x1b[0m\n", function);
+            printf("\x1b[1;31m[%s] Unknown error\x1b[0m\n", function);
             break;
         default:
-            printf("\x1b[1;31m[%s] Error: Unknown error code\x1b[0m\n", function);
+            printf("\x1b[1;31m[%s] Unknown error code\x1b[0m\n", function);
             break;
     }
     /* and extra message if given */
     if (*message) {
         va_list args;
         va_start(args, message);
-        printf("\x1b[1;\xAF");
+        printf("\x1b[1;31m  > ");
         vprintf(message, args);
         printf("\x1b[0m\n");
         va_end(args);
     }
-    return code;
+    /* stop on error */
+    if (DEBUG_LEVEL < STOP_ON_ERROR)
+        return code;
+    exit(code);
 }
 
-void printDebug(const char* function, const char* message, ...) {
-    if(DEBUG) {
+void printDebugMessage(const char* function, const unsigned int level, const char* message, ...) {
+    const static char* levelString[] = {"\x1b[1;30m", "\x1b[1;31m", "\x1b[1;32m", "\x1b[1;35m"};
+    if(DEBUG_LEVEL>=level) {
         va_list args;
         va_start(args, message);
-        printf("\x1b[1;32m[%s] ", function);
+        printf("%s[%s] ", levelString[level], function);
         vprintf(message, args);
         printf("\x1b[0m\n");
         va_end(args);

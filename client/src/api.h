@@ -81,7 +81,7 @@ static int isValidIpAddress(char *ipAddress);
 */
 
 ResultCode printError(const char* function, ResultCode code, const char* message, ...);
-void printDebug(const char* function, const char* message, ...);
+void printDebugMessage(const char* function, const unsigned int level, const char* message, ...);
 
 
 
