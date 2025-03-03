@@ -58,7 +58,7 @@ int unpackGetBoardState(char* string, jsmntok_t* tokens, BoardState* boardState)
 static ResultCode connectToSocket(const char *adress, unsigned int port, unsigned int adrSize);
 static ResultCode dnsSearch(const char *domain, char** ipAdress, int* adrSize);
 
-static int sendData(char* data, unsigned int dataLength);
+static ResultCode sendData(const char *data, unsigned int dataLength);
 
 static int getServerResponse(char** string, jsmntok_t* tokens, int nbTokens);
 static int getData(char** string, int* stringLength);

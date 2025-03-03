@@ -46,12 +46,6 @@ int SOCKET = -1;     // socket descriptor
 int DEBUG_LEVEL = NO_DEBUG;      // Set to 1 to enable debug mode, 0 to disable (use `extern int debug = 1;`)
 
 
-
-
-
-
-
-
 /*
 
     Exposed functions
@@ -94,13 +88,18 @@ ResultCode connectToCGS(char* address, unsigned int port) {
         }
     } else adrType = ipVerificationResult;
 
+    /* connect to Socket */
+    ResultCode res;
     if(ipaddress != NULL) {
-        ResultCode result = connectToSocket(ipaddress, port, adrType);
+        res = connectToSocket(ipaddress, port, adrType);
         free(ipaddress);
-
-        return result;
     }
-    return connectToSocket(address, port, adrType);
+    else {
+        res = connectToSocket(address, port, adrType);
+    }
+    if (res == ALL_GOOD)
+        printDebugMessage(__FUNCTION__, DEBUG, "Successfully connected to %s", address);
+    return res;
 }
 
 // After connecting to the server you need to send your name to the server. It will be used to uniquely identify you.
@@ -113,18 +112,16 @@ ResultCode sendName(char* name) {
 
     // Parse data into json string
     char* data = (char *) malloc((MAX_USERNAME_LENGTH + 20) * sizeof(char));
-
-    // Check if malloc failed
-    if(data == NULL) return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
+    if(data == NULL)
+        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
     // Fill data with name
     int dataLength = sprintf(data, "{ 'name': '%s' }", name);
 
     // Send data and check for success
-    if(!sendData(data, dataLength))
+    if(sendData(data, dataLength) != ALL_GOOD)
         return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
-        //TODO: sendData never returns 0 (it returns -1 when fails)
-        //-> change sendData and check every call
+
     free(data);
     
     // Get server acknowledgement
@@ -502,12 +499,13 @@ static ResultCode dnsSearch(const char *domain, char** ipaddress, int* adrType) 
     return ALL_GOOD;
 }
 
-static int sendData(char* data, unsigned int dataLength) {
+// return ALL_GOOD or OTHER_ERROR
+static ResultCode sendData(const char *data, unsigned int dataLength) {
     // Allocate data block for first message containing next message length
     char* dataBlock1 = (char *) malloc(FIRST_MSG_LENGTH * sizeof(char));
 
     // Check if malloc failed
-    if(dataBlock1 == NULL) return -1;
+    if(dataBlock1 == NULL) return MEMORY_ALLOCATION_ERROR;
 
     // Fill string with spaces
     for(int i = 0; i < FIRST_MSG_LENGTH; i++)
@@ -517,17 +515,17 @@ static int sendData(char* data, unsigned int dataLength) {
     sprintf(dataBlock1, "%d", dataLength);
 
     // Send first message over the socket wire
-    int res = send(SOCKET, dataBlock1, FIRST_MSG_LENGTH, 0);
-    if(res == -1) return -1;
+    if(send(SOCKET, dataBlock1, FIRST_MSG_LENGTH, 0) == -1)
+        return OTHER_ERROR;
 
     free(dataBlock1);
 
     // Send data over the socket wire
-    int res2 = send(SOCKET, data, dataLength, 0);
-    if(res2 == -1) return -1;
+    if(send(SOCKET, data, dataLength, 0) == -1)
+        return OTHER_ERROR;
 
     // Return success
-    return 1;
+    return ALL_GOOD;
 }
 
 static int getServerResponse(char** string, jsmntok_t* tokens, int nbTokens) {
