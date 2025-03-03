@@ -35,15 +35,56 @@
 
 // Game headers
 #include "gameHeaders/ticketToRide.h"
-#include "api.h"
+
+// some intern definitions
+#define MAX_TIMEOUT 60 // in seconds
+#define MIN_TIMEOUT 5
+
+#define MAX_SEED 10000
+
+#define MAX_USERNAME_LENGTH 100
+#define MAX_MESSAGE_LENGTH 256
+
+#define GAME_SETTINGS_MAX_JSON_LENGTH 250
+#define PACKED_DATA_MAX_SIZE 400
+
+#define GET_MOVE_RESPONSE_JSON_SIZE 19
+#define SEND_MOVE_RESPONSE_JSON_SIZE 29
+
+#define BOARD_STATE_RESPONSE_JSON_SIZE 13
+
+#define FIRST_MSG_LENGTH 6
+
+// Json messages size, (nb of key * 2) + 1
+#define SERVER_ACKNOWLEDGEMENT_JSON_SIZE 5
+#define GAME_SETTINGS_ACKNOWLEDGEMENT_JSON_SIZE 19
+
+
 /*
-
     Global vars
-
 */
 
-int SOCKET = -1;     // socket descriptor
+int SOCKET = -1;                  // socket descriptor
 int DEBUG_LEVEL = NO_DEBUG;      // Set to 1 to enable debug mode, 0 to disable (use `extern int debug = 1;`)
+
+
+// Some prototypes
+int verifyAndPackGameSettings(char* data, GameSettings gameSettings);
+ResultCode unpackGameSettingsData(char *string, jsmntok_t *tokens, GameData *gameData);
+ResultCode unpackGetMoveData(char* string, jsmntok_t* tokens, MoveData* moveData, MoveResult* moveResult);
+int packSendMoveData(char* data, MoveData* moveData);
+ResultCode unpackSendMoveResult(char *string, jsmntok_t *tokens, MoveResult *moveResult);
+ResultCode unpackGetBoardState(char *string, jsmntok_t *tokens, BoardState *boardState);
+static ResultCode connectToSocket(const char *adress, unsigned int port, unsigned int adrSize);
+static ResultCode dnsSearch(const char *domain, char** ipAdress, int* adrSize);
+static ResultCode sendData(const char *data, unsigned int dataLength);
+static ResultCode getServerResponse(char **string, jsmntok_t *tokens, int nbTokens);
+static ResultCode getData(char **string, int *stringLength);
+static ResultCode readNByte(char **buffer, int nbByte);
+static int getIntegerLength(int value);
+static int isValidIpAddress(char *ipAddress);
+ResultCode printError(const char* function, ResultCode code, const char* message, ...);
+void printDebugMessage(const char* function, const unsigned int level, const char* message, ...);
 
 
 /*

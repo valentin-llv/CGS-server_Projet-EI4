@@ -11,30 +11,24 @@
 #include "ticketToRide.h"
 
 /*
-
     Default values for struct
     You can use those variables to initialize struct with default values
-
 */
 
 const GameSettings GameSettingsDefaults = { TRAINING, RANDOM_PLAYER, 10, 0, 0, 0 };
 const GameData GameDataDefaults = { "", 0, 0, 0, 0 };
 
 /*
-
-    Function
-
+    Functions
 */
 
 int verifyAndPackGameSettings(char* data, GameSettings gameSettings) {
     int dataLength = sprintf(data, "{ 'gameType': %d, 'botId': %d, 'timeout': %d, 'starter': %d, 'seed': %d, 'reconnect': %d }", gameSettings.gameType, gameSettings.botId, gameSettings.timeout, gameSettings.starter, gameSettings.seed, gameSettings.reconnect);
-
     return dataLength;
 }
 
 ResultCode unpackGameSettingsData(char *string, jsmntok_t *tokens, GameData *gameData) {
     // Nothing todo here for this game
-
     return ALL_GOOD;
 }
 
