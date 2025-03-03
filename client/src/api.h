@@ -40,14 +40,16 @@
 */
 
 int verifyAndPackGameSettings(char* data, GameSettings gameSettings);
-int unpackGameSettingsData(char* string, jsmntok_t* tokens, GameData* gameData);
 
-int unpackGetMoveData(char* string, jsmntok_t* tokens, MoveData* moveData, MoveResult* moveResult);
+ResultCode unpackGameSettingsData(char *string, jsmntok_t *tokens, GameData *gameData);
+
+ResultCode unpackGetMoveData(char* string, jsmntok_t* tokens, MoveData* moveData, MoveResult* moveResult);
 
 int packSendMoveData(char* data, MoveData* moveData);
-int unpackSendMoveResult(char* string, jsmntok_t* tokens, MoveResult* moveResult);
 
-int unpackGetBoardState(char* string, jsmntok_t* tokens, BoardState* boardState);
+ResultCode unpackSendMoveResult(char *string, jsmntok_t *tokens, MoveResult *moveResult);
+
+ResultCode unpackGetBoardState(char *string, jsmntok_t *tokens, BoardState *boardState);
 
 /*
 
@@ -60,10 +62,10 @@ static ResultCode dnsSearch(const char *domain, char** ipAdress, int* adrSize);
 
 static ResultCode sendData(const char *data, unsigned int dataLength);
 
-static int getServerResponse(char** string, jsmntok_t* tokens, int nbTokens);
-static int getData(char** string, int* stringLength);
+static ResultCode getServerResponse(char **string, jsmntok_t *tokens, int nbTokens);
+static ResultCode getData(char **string, int *stringLength);
 
-static int readNByte(char** buffer, int nbByte);
+static ResultCode readNByte(char **buffer, int nbByte);
 
 /*
 

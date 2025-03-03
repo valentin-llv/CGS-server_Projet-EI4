@@ -59,6 +59,7 @@ int DEBUG_LEVEL = NO_DEBUG;      // Set to 1 to enable debug mode, 0 to disable 
 // This is a blocking function, it will wait until the connection is established, it may take some time.
 
 ResultCode connectToCGS(char* address, unsigned int port) {
+    ResultCode result;
     if(port<1000)
         return printError(__FUNCTION__, PARAM_ERROR, "Invalid port value");
 
@@ -68,14 +69,10 @@ ResultCode connectToCGS(char* address, unsigned int port) {
     // Verify provided IP address and it's type: IPV4 or IPV6
     int ipVerificationResult = isValidIpAddress(address);
 
-    if(ipVerificationResult <= 0) { 
+    if(ipVerificationResult <= 0) {
         // Invalid IP, user might have used a domain name instead of an IP address
-        ResultCode dnsResult = dnsSearch(address, &ipaddress, &adrType);
-
-        if(dnsResult == ALL_GOOD) {
+        if((result = dnsSearch(address, &ipaddress, &adrType)) == ALL_GOOD) {
             char* addressTypeName = (char *) malloc(5 * sizeof(char));
-
-            // Check if malloc failed
             if(addressTypeName == NULL)
                 return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
@@ -84,28 +81,29 @@ ResultCode connectToCGS(char* address, unsigned int port) {
             printDebugMessage(__FUNCTION__, MESSAGE, "Domain name %s resolved into an %s address: %s", address, addressTypeName, ipaddress);
             free(addressTypeName);
         } else {
-            return printError(__FUNCTION__,PARAM_ERROR,  "Domain name %s failed to resolve into an IP address", address);
+            return printError(__FUNCTION__, result,  "Domain name %s failed to resolve into an IP address", address);
         }
     } else adrType = ipVerificationResult;
 
     /* connect to Socket */
-    ResultCode res;
+
     if(ipaddress != NULL) {
-        res = connectToSocket(ipaddress, port, adrType);
+        result = connectToSocket(ipaddress, port, adrType);
         free(ipaddress);
     }
     else {
-        res = connectToSocket(address, port, adrType);
+        result = connectToSocket(address, port, adrType);
     }
-    if (res == ALL_GOOD)
+    if (result == ALL_GOOD)
         printDebugMessage(__FUNCTION__, DEBUG, "Successfully connected to %s", address);
-    return res;
+    return result;
 }
 
 // After connecting to the server you need to send your name to the server. It will be used to uniquely identify you.
 // You need to provide your name as a string. It should be less than 90 characters long.
 
 ResultCode sendName(char* name) {
+    ResultCode result;
     // Check user's provided data, max name length is 90 characters
     if(strlen(name) >= MAX_USERNAME_LENGTH)
         return printError(__FUNCTION__, PARAM_ERROR, "Name too long");
@@ -119,21 +117,19 @@ ResultCode sendName(char* name) {
     int dataLength = sprintf(data, "{ 'name': '%s' }", name);
 
     // Send data and check for success
-    if(sendData(data, dataLength) != ALL_GOOD)
-        return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
+    if((result=sendData(data, dataLength)) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Failed to send data");
 
     free(data);
-    
+
     // Get server acknowledgement
     char* string;
     jsmntok_t* tokens = (jsmntok_t *) malloc(SERVER_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
-
-    // Check if malloc failed
     if(tokens == NULL)
         return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
-    if(!getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE))
-        return printError(__FUNCTION__, SERVER_ERROR, "Server response failed");
+    if((result=getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Server response failed");
 
     free(string);
     free(tokens);
@@ -148,6 +144,7 @@ ResultCode sendName(char* name) {
 // To fill the GameSettings struct you may want to use predefined constants available in api.h.
 
 ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
+    ResultCode result;
     // Check user's provided data
     if(gameSettings.gameType >= GamesTypesMax || gameSettings.gameType <= 0)
         return printError(__FUNCTION__, PARAM_ERROR, "Invalid game type");
@@ -168,8 +165,8 @@ ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
     int dataLength = verifyAndPackGameSettings(data, gameSettings);
 
     // Send data and check for success
-    if(sendData(data, dataLength) != ALL_GOOD)
-        return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
+    if((result = sendData(data, dataLength)) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Failed to send data");
     free(data);
 
     // Get server acknowledgement
@@ -178,8 +175,8 @@ ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
     if(tokens == NULL)
         return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
-    if(!getServerResponse(&string, tokens, GAME_SETTINGS_ACKNOWLEDGEMENT_JSON_SIZE))
-        return printError(__FUNCTION__, SERVER_ERROR, "Server response failed");
+    if((result=getServerResponse(&string, tokens, GAME_SETTINGS_ACKNOWLEDGEMENT_JSON_SIZE)) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Server response failed");
 
     // TODO create special unpack game settings function
 
@@ -214,9 +211,8 @@ ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
 
     gameData->boardData = boardData;
 
-    int result = unpackGameSettingsData(string, tokens, gameData);
-    if(result == -1)
-        return printError(__FUNCTION__, OTHER_ERROR, "Failed to unpack game settings");
+    if((result=unpackGameSettingsData(string, tokens, gameData)) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Failed to unpack game settings");
 
     free(string);
     free(tokens);
@@ -225,17 +221,18 @@ ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
     return ALL_GOOD;
 }
 
+
 // During a game this function is used to know what your opponent did during his turn.
 // You need to provide an empty MoveData struct and an empty MoveResult struct to store the move data returned by the server.
 // MoveData struct store the move your opponent did and MoveResult struct store the result of the move.
-
 ResultCode getMove(MoveData* moveData, MoveResult* moveResult) {
+    ResultCode result;
     // Parse data into json string
     char* data = "{ 'action': 'getMove' }";
 
     // Send data and check for success
-    if(sendData(data, strlen(data)) == ALL_GOOD)
-        return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
+    if((result = sendData(data, strlen(data))) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Failed to send data");
 
     // Get server acknowledgement
     char* string;
@@ -243,14 +240,12 @@ ResultCode getMove(MoveData* moveData, MoveResult* moveResult) {
     if(tokens == NULL)
         return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
-    if(!getServerResponse(&string, tokens, SEND_MOVE_RESPONSE_JSON_SIZE))
-        return printError(__FUNCTION__, SERVER_ERROR, "Server response failed");
+    if((result=getServerResponse(&string, tokens, SEND_MOVE_RESPONSE_JSON_SIZE)) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Server response failed");
 
     // Call the function related to the selected game to properly unpack the data
-    int result = unpackGetMoveData(string, tokens, moveData, moveResult);
-
-    if(result == -1)
-        return printError(__FUNCTION__, OTHER_ERROR, "Failed to unpack move data");
+    if((result=unpackGetMoveData(string, tokens, moveData, moveResult)) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Failed to unpack move data");
 
     free(string);
     free(tokens);
@@ -263,6 +258,7 @@ ResultCode getMove(MoveData* moveData, MoveResult* moveResult) {
 // You need to provide a MoveData struct containing your move and an empty MoveResult struct to store the result of the move returned by the server.
 
 ResultCode sendMove(MoveData* moveData, MoveResult* moveResult) {
+    ResultCode result;
     // Parse data into json string
     char* data = (char *) malloc(PACKED_DATA_MAX_SIZE * sizeof(char));
     if(data == NULL)
@@ -274,8 +270,8 @@ ResultCode sendMove(MoveData* moveData, MoveResult* moveResult) {
         return printError(__FUNCTION__, OTHER_ERROR, "Failed to send move data");
 
     // Send data and check for success
-    if(sendData(data, dataLength) != ALL_GOOD)
-        return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
+    if((result = sendData(data, dataLength)) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Failed to send data");
     free(data);
 
     // Get server acknowledgement
@@ -284,12 +280,11 @@ ResultCode sendMove(MoveData* moveData, MoveResult* moveResult) {
     if(tokens == NULL)
         return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
-    if(!getServerResponse(&string, tokens, SEND_MOVE_RESPONSE_JSON_SIZE))
-        return printError(__FUNCTION__, SERVER_ERROR, "Server response failed");
+    if((result=getServerResponse(&string, tokens, SEND_MOVE_RESPONSE_JSON_SIZE)) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Server response failed");
 
-    int result = unpackSendMoveResult(string, tokens, moveResult);
-    if(result == -1)
-        return printError(__FUNCTION__, OTHER_ERROR, "Failed to unpack move data");
+    if((result=unpackSendMoveResult(string, tokens, moveResult)) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Failed to unpack move data");
 
     free(string);
     free(tokens);
@@ -299,12 +294,13 @@ ResultCode sendMove(MoveData* moveData, MoveResult* moveResult) {
 }
 
 ResultCode getBoardState(BoardState* boardState) {
+    ResultCode result;
     // Parse data into json string
     char* data = "{ 'action': 'getBoardState' }";
 
     // Send data and check for success
-    if(sendData(data, strlen(data)) != ALL_GOOD)
-        return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
+    if((result=sendData(data, strlen(data))) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Failed to send data");
 
     // Get server acknowledgement
     char* string;
@@ -312,13 +308,12 @@ ResultCode getBoardState(BoardState* boardState) {
     if(tokens == NULL)
         return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
-    if(!getServerResponse(&string, tokens, BOARD_STATE_RESPONSE_JSON_SIZE))
-        return printError(__FUNCTION__, SERVER_ERROR, "Server response failed");
+    if((result=getServerResponse(&string, tokens, BOARD_STATE_RESPONSE_JSON_SIZE)) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Server response failed");
 
     // Call the function related to the selected game to properly unpack the data
-    int result = unpackGetBoardState(string, tokens, boardState);
-    if(result == -1)
-        return printError(__FUNCTION__, OTHER_ERROR, "Failed to unpack board state");
+    if((result=unpackGetBoardState(string, tokens, boardState)) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Failed to unpack board state");
 
     free(string);
     free(tokens);
@@ -332,6 +327,7 @@ ResultCode getBoardState(BoardState* boardState) {
 // You need to provide the message as a string. It should be less than 256 characters long.
 
 ResultCode sendMessage(char* message) {
+    ResultCode result;
     // Check user's provided data
     if(strlen(message) >= MAX_MESSAGE_LENGTH)
         return printError(__FUNCTION__, PARAM_ERROR, "Message too long");
@@ -344,8 +340,8 @@ ResultCode sendMessage(char* message) {
     int dataLength = sprintf(data, "{ 'action': 'sendMessage', 'message': '%s' }", message);
 
     // Send data and check for success
-    if(sendData(data, dataLength) != ALL_GOOD)
-        return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
+    if((result=sendData(data, dataLength)) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Failed to send data");
     free(data);
 
     // Get server acknowledgement
@@ -354,8 +350,8 @@ ResultCode sendMessage(char* message) {
     if(tokens == NULL)
         return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
-    if(!getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE))
-        return printError(__FUNCTION__, SERVER_ERROR, "Server response failed");
+    if((result=getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Server response failed");
 
     free(string);
     free(tokens);
@@ -368,12 +364,13 @@ ResultCode sendMessage(char* message) {
 // It will print the colored board in the console.
 
 ResultCode printBoard() {
+    ResultCode result;
     // Parse data into json string
     char* data = "{ 'action': 'displayGame' }";
 
     // Send data and check for success
-    if(sendData(data, strlen(data)) != ALL_GOOD)
-        return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
+    if((result=sendData(data, strlen(data))) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Failed to send data");
 
     // Get server acknowledgement
     char* string;
@@ -381,8 +378,8 @@ ResultCode printBoard() {
     if(tokens == NULL)
         return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
-    if(!getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE))
-        return printError(__FUNCTION__, SERVER_ERROR, "Server response failed");
+    if((result=getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Server response failed");
 
     int blockLength = atoi(&string[tokens[4].start]) + 1;
     char* buffer = (char *) malloc(blockLength * sizeof(char));
@@ -393,11 +390,8 @@ ResultCode printBoard() {
     memset(buffer, 0, blockLength * sizeof(char));
 
     // Read new incoming message on the socket wire
-    int res = readNByte(&buffer, blockLength - 1);
-
-    // Check for error
-    if(res == -1)
-        return printError(__FUNCTION__, OTHER_ERROR, "Failed to read data");
+    if((result=readNByte(&buffer, blockLength - 1)) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Failed to read data");
 
     // Print the board
     printf("%s\n", buffer);
@@ -413,12 +407,13 @@ ResultCode printBoard() {
 
 // This function is used to quit the currently running game.
 ResultCode quitGame() {
+    ResultCode result;
     // Parse data into json string
     char* data = "{ 'action': 'quitGame' }";
 
     // Send data and check for success
-    if(sendData(data, strlen(data)) != ALL_GOOD)
-        return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
+    if((result=sendData(data, strlen(data))) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Failed to send data");
 
     // Get server acknowledgement
     char* string;
@@ -426,8 +421,8 @@ ResultCode quitGame() {
     if(tokens == NULL)
         return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
 
-    if(!getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE))
-        return printError(__FUNCTION__, SERVER_ERROR, "Server response failed");
+    if((result=getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) != ALL_GOOD)
+        return printError(__FUNCTION__, result, "Server response failed");
 
     free(string);
     free(tokens);
@@ -503,12 +498,10 @@ static ResultCode dnsSearch(const char *domain, char** ipaddress, int* adrType) 
 static ResultCode sendData(const char *data, unsigned int dataLength) {
     // check if the socket is open
     if (SOCKET < 0)
-        return printError(__FUNCTION__, OTHER_ERROR, "The connection to the server is not yet etablished. Call `connectToCGS` before!");
+        return printError(__FUNCTION__, OTHER_ERROR, "The connection to the server is not yet established. Call `connectToCGS` before!");
 
     // Allocate data block for first message containing next message length
     char* dataBlock1 = (char *) malloc(FIRST_MSG_LENGTH * sizeof(char));
-
-    // Check if malloc failed
     if(dataBlock1 == NULL) return MEMORY_ALLOCATION_ERROR;
 
     // Fill string with spaces
@@ -520,23 +513,25 @@ static ResultCode sendData(const char *data, unsigned int dataLength) {
 
     // Send first message over the socket wire
     if(send(SOCKET, dataBlock1, FIRST_MSG_LENGTH, 0) == -1)
-        return OTHER_ERROR;
+        return printError(__FUNCTION__, OTHER_ERROR, "Failed to send data");
 
     free(dataBlock1);
 
     // Send data over the socket wire
     if(send(SOCKET, data, dataLength, 0) == -1)
-        return OTHER_ERROR;
+        return printError(__FUNCTION__, OTHER_ERROR, "Failed to send data");
 
     // Return success
     return ALL_GOOD;
 }
 
-static int getServerResponse(char** string, jsmntok_t* tokens, int nbTokens) {
+static ResultCode getServerResponse(char **string, jsmntok_t *tokens, int nbTokens) {
     int stringLength;
+    ResultCode result;
 
     // Get data
-    if(!getData(string, &stringLength)) return -1;
+    if((result=getData(string, &stringLength)) != ALL_GOOD)
+        return result;
     
     // Instantiate json parser
     jsmn_parser parser;
@@ -551,30 +546,27 @@ static int getServerResponse(char** string, jsmntok_t* tokens, int nbTokens) {
     // Print error if needed
     if(!state) {
         int blockLength = tokens[4].end - tokens[4].start;
-        printError(__FUNCTION__, SERVER_ERROR, "Server responded with following error: %.*s\n", blockLength, (*string + tokens[4].start));
-        return -1;
+        return printError(__FUNCTION__, OTHER_ERROR, "Server responded with following error: %.*s\n", blockLength, (*string + tokens[4].start));
     }
 
     // Return success
-    return 1;
+    return ALL_GOOD;
 }
 
-static int getData(char** string, int* stringLength) {
+static ResultCode getData(char **string, int *stringLength) {
     // Allocate buffer to store data from read
     char buffer[FIRST_MSG_LENGTH] = { 0 };
 
     // Read incoming data on socket wire
     int res = read(SOCKET, buffer, FIRST_MSG_LENGTH - 1);
-    if(res <= 0) return -1; // Ensure it reads the correct amount of data
+    if(res <= 0) return OTHER_ERROR; // Ensure it reads the correct amount of data
 
     // First message contain the length of the next one
     *stringLength = atoi(buffer) + 1;
 
     // Allocate buffer of 0 based on the next message length
     char* buffer2 = (char *) malloc(*stringLength * sizeof(char));
-
-    // Check if malloc failed
-    if(buffer2 == NULL) return -1;
+    if(buffer2 == NULL) return MEMORY_ALLOCATION_ERROR;
 
     // Fill buffer with 0
     memset(buffer2, 0, (*stringLength) * sizeof(char));
@@ -583,31 +575,29 @@ static int getData(char** string, int* stringLength) {
     res = readNByte(&buffer2, *stringLength - 1);
 
     // Check for error
-    if(res == -1) return -1;
+    if(res != ALL_GOOD) return res;
     
     // Copy received data to **string param to effectively return the received string
     *string = (char *) malloc(*stringLength * sizeof(char));
-
-    // Check if malloc failed
-    if(*string == NULL) return -1;
+    if(*string == NULL) return MEMORY_ALLOCATION_ERROR;
 
     strcpy(*string, buffer2);
 
     // Return success
-    return 1;
+    return ALL_GOOD;
 }
 
-static int readNByte(char** buffer, int nbByte) {
+static ResultCode readNByte(char **buffer, int nbByte) {
     int totalRead = 0;
     while (totalRead < nbByte) {
         int res2 = read(SOCKET, *buffer + totalRead, nbByte - totalRead);
         totalRead += res2;
 
         // Check for error
-        if (res2 <= 0) return -1;
+        if (res2 <= 0) return SERVER_ERROR;
     }
 
-    return 1;
+    return ALL_GOOD;
 }
 
 /*

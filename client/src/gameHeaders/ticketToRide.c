@@ -32,10 +32,10 @@ int verifyAndPackGameSettings(char* data, GameSettings gameSettings) {
     return dataLength;
 }
 
-int unpackGameSettingsData(char* string, jsmntok_t* tokens, GameData* gameData) {
+ResultCode unpackGameSettingsData(char *string, jsmntok_t *tokens, GameData *gameData) {
     // Nothing todo here for this game
 
-    return 1;
+    return ALL_GOOD;
 }
 
 int packSendMoveData(char* data, MoveData* moveData) {
@@ -66,25 +66,21 @@ int packSendMoveData(char* data, MoveData* moveData) {
     return dataLength;
 }
 
-int unpackGetMoveData(char* string, jsmntok_t* tokens, MoveData* moveData, MoveResult* moveResult) {
+ResultCode unpackGetMoveData(char* string, jsmntok_t* tokens, MoveData* moveData, MoveResult* moveResult) {
     // Load received data into struct
     moveData->action = (Action) atoi(&string[tokens[4].start]);
     moveResult->state = (unsigned int) atoi(&string[tokens[6].start]);
 
     int blockLength = tokens[8].end - tokens[8].start + 1;
     char* opponentMessage = (char *) malloc(blockLength * sizeof(char));
-
-    // Check if malloc failed
-    if(opponentMessage == NULL) return -1;
+    if(opponentMessage == NULL) return MEMORY_ALLOCATION_ERROR;
 
     sprintf(opponentMessage, "%.*s", blockLength - 1, &string[tokens[8].start]);
     moveResult->opponentMessage = opponentMessage;;
 
     int blockLength2 = tokens[10].end - tokens[10].start + 1;
     char* message = (char *) malloc(blockLength2 * sizeof(char));
-
-    // Check if malloc failed
-    if(message == NULL) return -1;
+    if(message == NULL) return MEMORY_ALLOCATION_ERROR;
 
     sprintf(message, "%.*s", blockLength2 - 1, &string[tokens[10].start]);
     moveResult->message = message;
@@ -111,29 +107,25 @@ int unpackGetMoveData(char* string, jsmntok_t* tokens, MoveData* moveData, MoveR
             // No additional data to unpack
             break;
         default:
-            return -1;
+            return PARAM_ERROR;
     }
 
-    return 1;
+    return ALL_GOOD;
 }
 
-int unpackSendMoveResult(char* string, jsmntok_t* tokens, MoveResult* moveResult) {
+ResultCode unpackSendMoveResult(char *string, jsmntok_t *tokens, MoveResult *moveResult) {
     moveResult->state = (Action) atoi(&string[tokens[2].start]);
 
     int blockLength = tokens[6].end - tokens[6].start + 1;
     char* opponentMessage = (char *) malloc(blockLength * sizeof(char));
-
-    // Check if malloc failed
-    if(opponentMessage == NULL) return -1;
+    if(opponentMessage == NULL) return MEMORY_ALLOCATION_ERROR;
 
     sprintf(opponentMessage, "%.*s", blockLength - 1, &string[tokens[6].start]);
     moveResult->opponentMessage = opponentMessage;
 
     int blockLength2 = tokens[8].end - tokens[8].start + 1;
     char* message = (char *) malloc(blockLength2 * sizeof(char));
-
-    // Check if malloc failed
-    if(message == NULL) return -1;
+    if(message == NULL) return MEMORY_ALLOCATION_ERROR;
 
     sprintf(message, "%.*s", blockLength2 - 1, &string[tokens[8].start]);
     moveResult->message = message;
@@ -159,14 +151,15 @@ int unpackSendMoveResult(char* string, jsmntok_t* tokens, MoveResult* moveResult
             // No additional data to unpack
             break;
         default:
-            return -1;
+            return PARAM_ERROR;
     }
 
-    return 1;
+    return ALL_GOOD;
 }
 
-int unpackGetBoardState(char* string, jsmntok_t* tokens, BoardState* boardState) {
-    for(int i = 0; i < 5; i++) boardState->card[i] = (CardColor) atoi(&string[tokens[4 + i * 2].start]);
+ResultCode unpackGetBoardState(char* string, jsmntok_t* tokens, BoardState* boardState) {
+    for(int i = 0; i < 5; i++)
+        boardState->card[i] = (CardColor) atoi(&string[tokens[4 + i * 2].start]);
 
-    return 1;
+    return ALL_GOOD;
 }
