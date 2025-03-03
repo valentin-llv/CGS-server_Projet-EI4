@@ -168,8 +168,8 @@ ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
     int dataLength = verifyAndPackGameSettings(data, gameSettings);
 
     // Send data and check for success
-    if(!sendData(data, dataLength))
-        return printError(__FUNCTION__, SERVER_ERROR, "");
+    if(sendData(data, dataLength) != ALL_GOOD)
+        return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
     free(data);
 
     // Get server acknowledgement
@@ -234,7 +234,7 @@ ResultCode getMove(MoveData* moveData, MoveResult* moveResult) {
     char* data = "{ 'action': 'getMove' }";
 
     // Send data and check for success
-    if(!sendData(data, strlen(data)))
+    if(sendData(data, strlen(data)) == ALL_GOOD)
         return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
 
     // Get server acknowledgement
@@ -274,7 +274,7 @@ ResultCode sendMove(MoveData* moveData, MoveResult* moveResult) {
         return printError(__FUNCTION__, OTHER_ERROR, "Failed to send move data");
 
     // Send data and check for success
-    if(!sendData(data, dataLength))
+    if(sendData(data, dataLength) != ALL_GOOD)
         return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
     free(data);
 
@@ -303,7 +303,7 @@ ResultCode getBoardState(BoardState* boardState) {
     char* data = "{ 'action': 'getBoardState' }";
 
     // Send data and check for success
-    if(!sendData(data, strlen(data)))
+    if(sendData(data, strlen(data)) != ALL_GOOD)
         return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
 
     // Get server acknowledgement
@@ -344,7 +344,7 @@ ResultCode sendMessage(char* message) {
     int dataLength = sprintf(data, "{ 'action': 'sendMessage', 'message': '%s' }", message);
 
     // Send data and check for success
-    if(!sendData(data, dataLength))
+    if(sendData(data, dataLength) != ALL_GOOD)
         return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
     free(data);
 
@@ -372,7 +372,7 @@ ResultCode printBoard() {
     char* data = "{ 'action': 'displayGame' }";
 
     // Send data and check for success
-    if(!sendData(data, strlen(data)))
+    if(sendData(data, strlen(data)) != ALL_GOOD)
         return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
 
     // Get server acknowledgement
@@ -417,7 +417,7 @@ ResultCode quitGame() {
     char* data = "{ 'action': 'quitGame' }";
 
     // Send data and check for success
-    if(!sendData(data, strlen(data)))
+    if(sendData(data, strlen(data)) != ALL_GOOD)
         return printError(__FUNCTION__, SERVER_ERROR, "Failed to send data");
 
     // Get server acknowledgement
@@ -501,6 +501,10 @@ static ResultCode dnsSearch(const char *domain, char** ipaddress, int* adrType) 
 
 // return ALL_GOOD or OTHER_ERROR
 static ResultCode sendData(const char *data, unsigned int dataLength) {
+    // check if the socket is open
+    if (SOCKET < 0)
+        return printError(__FUNCTION__, OTHER_ERROR, "The connection to the server is not yet etablished. Call `connectToCGS` before!");
+
     // Allocate data block for first message containing next message length
     char* dataBlock1 = (char *) malloc(FIRST_MSG_LENGTH * sizeof(char));
 
@@ -654,7 +658,7 @@ ResultCode printError(const char* function, ResultCode code, const char* message
             printf("\x1b[1;31m[%s] Memory allocation failed\x1b[0m\n", function);
             break;
         case OTHER_ERROR:
-            printf("\x1b[1;31m[%s] Unknown error\x1b[0m\n", function);
+            printf("\x1b[1;31m[%s] Other error\x1b[0m\n", function);
             break;
         default:
             printf("\x1b[1;31m[%s] Unknown error code\x1b[0m\n", function);
