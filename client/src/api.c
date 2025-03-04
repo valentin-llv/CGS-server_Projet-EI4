@@ -75,8 +75,8 @@ ResultCode unpackGetMoveData(char* string, jsmntok_t* tokens, MoveData* moveData
 int packSendMoveData(char* data, const MoveData *moveData);
 ResultCode unpackSendMoveResult(char *string, jsmntok_t *tokens, MoveResult *moveResult);
 ResultCode unpackGetBoardState(char *string, jsmntok_t *tokens, BoardState *boardState);
-static ResultCode connectToSocket(const char *adress, unsigned int port, unsigned int adrSize);
-static ResultCode dnsSearch(const char *domain, char** ipAdress, int* adrSize);
+static ResultCode connectToSocket(const char *address, unsigned int port, int adrType);
+static ResultCode dnsSearch(const char *domain, char** ipAddress, int* adrType);
 static ResultCode sendData(const char *data, unsigned int dataLength);
 static ResultCode getServerResponse(char **string, jsmntok_t *tokens, int nbTokens);
 static ResultCode getData(char **string, int *stringLength);
@@ -84,7 +84,7 @@ static ResultCode readNByte(char **buffer, int nbByte);
 static int getIntegerLength(int value);
 static int isValidIpAddress(const char *ipAddress);
 ResultCode printError(const char* function, ResultCode code, const char* message, ...);
-void printDebugMessage(const char* function, const unsigned int level, const char* message, ...);
+void printDebugMessage(const char* function, unsigned int level, const char* message, ...);
 
 
 /*
@@ -485,7 +485,7 @@ ResultCode quitGame() {
 
 */
 
-static ResultCode connectToSocket(const char *address, unsigned int port, unsigned int adrType) {
+static ResultCode connectToSocket(const char *address, unsigned int port, int adrType) {
     int soc = socket(adrType, SOCK_STREAM, 0); // Use TCP socket
     if (soc < 0)
         return printError(__FUNCTION__, OTHER_ERROR, "Socket creation failed");
@@ -710,7 +710,7 @@ ResultCode printError(const char* function, ResultCode code, const char* message
     exit(code);
 }
 
-void printDebugMessage(const char* function, const unsigned int level, const char* message, ...) {
+void printDebugMessage(const char* function, unsigned int level, const char* message, ...) {
     const static char* levelString[] = {"\x1b[1;30m", "\x1b[1;31m", "\x1b[1;32m", "\x1b[1;35m"};
     if(DEBUG_LEVEL>=level) {
         va_list args;
