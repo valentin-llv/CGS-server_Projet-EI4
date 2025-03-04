@@ -229,11 +229,11 @@ extern const GameData GameDataDefaults;
 // This is the first function you should call, it will connect you to the server.
 // You need to provide the server address and the port to connect to.
 // This is a blocking function, it will wait until the connection is established, it may take some time.
-ResultCode connectToCGS(char* address, unsigned int port);
+ResultCode connectToCGS(const char *address, unsigned int port);
 
 // After connecting to the server you need to send your name to the server. It will be used to uniquely identify you.
 // You need to provide your name as a string. It should be less than 90 characters long.
-ResultCode sendName(char* name);
+ResultCode sendName(const char *name);
 
 // After sending your name you need to send game settings to the server to start a game.
 // You need to provide a GameSettings struct and a GameData struct to store the game data returned by the server.
@@ -248,14 +248,14 @@ ResultCode getMove(MoveData* moveData, MoveResult* moveResult);
 
 // During a game this function is used to send your move to the server.
 // You need to provide a MoveData struct containing your move and an empty MoveResult struct to store the result of the move returned by the server.
-ResultCode sendMove(MoveData* moveData, MoveResult* moveResult);
+ResultCode sendMove(const MoveData *moveData, MoveResult* moveResult);
 
 // This function is used to get the current state of the board during a game.
 ResultCode getBoardState(BoardState* boardState);
 
 // This function is used to send a message to your opponent during a game.
 // You need to provide the message as a string. It should be less than 256 characters long.
-ResultCode sendMessage(char* message);
+ResultCode sendMessage(const char *message);
 
 // This function is used to display the game board during a game.
 // It will print the colored board in the console.

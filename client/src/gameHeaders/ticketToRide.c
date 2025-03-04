@@ -32,7 +32,7 @@ ResultCode unpackGameSettingsData(char *string, jsmntok_t *tokens, GameData *gam
     return ALL_GOOD;
 }
 
-int packSendMoveData(char* data, MoveData* moveData) {
+int packSendMoveData(char* data, const MoveData *moveData) {
     int dataLength = 0;
 
     switch (moveData->action) {
