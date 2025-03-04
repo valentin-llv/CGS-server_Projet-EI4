@@ -166,7 +166,7 @@ typedef struct {
 } DrawCardMove;
 
 typedef struct {
-    bool selectCard[3];     // Set to false to not take the i card or true take it
+    bool selectCard[3];     // Set to true in order to not take the i-th card
 } ChooseObjectiveMove;
 
 typedef struct {
