@@ -69,7 +69,7 @@ int DEBUG_LEVEL = NO_DEBUG;      // Set to 1 to enable debug mode, 0 to disable 
 
 
 // Some prototypes
-int verifyAndPackGameSettings(char* data, GameSettings gameSettings);
+int packGameSettings(char* data, GameSettings gameSettings);
 ResultCode unpackGameSettingsData(char *string, jsmntok_t *tokens, GameData *gameData);
 ResultCode unpackGetMoveData(char* string, jsmntok_t* tokens, MoveData* moveData, MoveResult* moveResult);
 int packSendMoveData(char* data, const MoveData *moveData);
@@ -203,7 +203,7 @@ ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
     if(data == NULL)
         return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR,"");
 
-    int dataLength = verifyAndPackGameSettings(data, gameSettings);
+    int dataLength = packGameSettings(data, gameSettings);
 
     // Send data and check for success
     if((result = sendData(data, dataLength)) != ALL_GOOD)
@@ -503,6 +503,7 @@ static ResultCode connectToSocket(const char *address, unsigned int port, int ad
         return printError(__FUNCTION__, SERVER_ERROR, "Connection to server failed: %s [code = %d]", strerror(errno), errno);
 
     SOCKET = soc;
+    printDebugMessage(__FUNCTION__, INTERN_DEBUG, "Socket created");
     return ALL_GOOD;
 }
 
@@ -563,6 +564,7 @@ static ResultCode sendData(const char *data, unsigned int dataLength) {
         return printError(__FUNCTION__, OTHER_ERROR, "Failed to send data");
 
     // Return success
+    printDebugMessage(__FUNCTION__, INTERN_DEBUG, "Sent data: %s", data);
     return ALL_GOOD;
 }
 
@@ -591,6 +593,7 @@ static ResultCode getServerResponse(char **string, jsmntok_t *tokens, int nbToke
     }
 
     // Return success
+    printDebugMessage(__FUNCTION__, INTERN_DEBUG, "Server answered: %s", *string);
     return ALL_GOOD;
 }
 
@@ -711,7 +714,7 @@ ResultCode printError(const char* function, ResultCode code, const char* message
 }
 
 void printDebugMessage(const char* function, unsigned int level, const char* message, ...) {
-    const static char* levelString[] = {"\x1b[1;30m", "\x1b[1;31m", "\x1b[1;32m", "\x1b[1;35m"};
+    const static char* levelString[] = {"\x1b[1;30m", "\x1b[1;30m", "\x1b[1;31m", "\x1b[1;32m", "\x1b[1;35m"};
     if(DEBUG_LEVEL>=level) {
         va_list args;
         va_start(args, message);

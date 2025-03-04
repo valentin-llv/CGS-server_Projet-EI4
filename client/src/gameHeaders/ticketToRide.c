@@ -22,7 +22,7 @@ const GameData GameDataDefaults = { "", 0, 0, 0, 0 };
     Functions
 */
 
-int verifyAndPackGameSettings(char* data, GameSettings gameSettings) {
+int packGameSettings(char* data, GameSettings gameSettings) {
     int dataLength = sprintf(data, "{ 'gameType': %d, 'botId': %d, 'timeout': %d, 'starter': %d, 'seed': %d, 'reconnect': %d }", gameSettings.gameType, gameSettings.botId, gameSettings.timeout, gameSettings.starter, gameSettings.seed, gameSettings.reconnect);
     return dataLength;
 }
