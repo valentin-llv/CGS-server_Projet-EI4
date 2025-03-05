@@ -78,13 +78,15 @@ ResultCode unpackGetBoardState(char *string, jsmntok_t *tokens, BoardState *boar
 static ResultCode connectToSocket(const char *address, unsigned int port, int adrType);
 static ResultCode dnsSearch(const char *domain, char** ipAddress, int* adrType);
 static ResultCode sendData(const char *data, unsigned int dataLength);
-static ResultCode getServerResponse(char **string, jsmntok_t *tokens, int nbTokens);
+static ResultCode getServerResponse(char **string, jsmntok_t **tokens, int nbMaxTokens);
 static ResultCode getData(char **string, int *stringLength);
 static ResultCode readNByte(char **buffer, int nbByte);
 static int getIntegerLength(int value);
 static int isValidIpAddress(const char *ipAddress);
 ResultCode printError(const char* function, ResultCode code, const char* message, ...);
 void printDebugMessage(const char* function, unsigned int level, const char* message, ...);
+int getIntFromTokens(const char *string, const char* prop, const jsmntok_t *tokens, int nbMaxTokens);
+char* getStringFromTokens(const char *string, const char* prop, const jsmntok_t *tokens, int nbMaxTokens);
 
 
 /*
@@ -165,15 +167,9 @@ ResultCode sendName(const char *name) {
 
     // Get server acknowledgement
     char* string;
-    jsmntok_t* tokens = (jsmntok_t *) malloc(SERVER_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
-    if(tokens == NULL)
-        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
-
-    if((result=getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) != ALL_GOOD)
+    if((result=getServerResponse(&string, NULL, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) != ALL_GOOD)
         return printError(__FUNCTION__, result, "Server response failed");
-
     free(string);
-    free(tokens);
 
     // Return success
     return ALL_GOOD;
@@ -212,18 +208,15 @@ ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
 
     // Get server acknowledgement
     char* string;
-    jsmntok_t* tokens = (jsmntok_t *) malloc(GAME_SETTINGS_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
-    if(tokens == NULL)
-        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
-
-    if((result=getServerResponse(&string, tokens, GAME_SETTINGS_ACKNOWLEDGEMENT_JSON_SIZE)) != ALL_GOOD)
+    jsmntok_t* tokens;
+     if((result=getServerResponse(&string, &tokens, GAME_SETTINGS_ACKNOWLEDGEMENT_JSON_SIZE)) != ALL_GOOD)
         return printError(__FUNCTION__, result, "Server response failed");
 
     // TODO create special unpack game settings function
 
     // Set struct from param to defaults values
     *gameData = GameDataDefaults;
-
+/*
     // Load received data into struct
     int blockLength = tokens[4].end - tokens[4].start + 1;
     char* gameName = (char *) malloc(blockLength * sizeof(char));
@@ -254,9 +247,8 @@ ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
 
     if((result=unpackGameSettingsData(string, tokens, gameData)) != ALL_GOOD)
         return printError(__FUNCTION__, result, "Failed to unpack game settings");
-
+*/
     free(string);
-    free(tokens);
 
     // Return success
     return ALL_GOOD;
@@ -277,11 +269,8 @@ ResultCode getMove(MoveData* moveData, MoveResult* moveResult) {
 
     // Get server acknowledgement
     char* string;
-    jsmntok_t* tokens = (jsmntok_t *) malloc(SEND_MOVE_RESPONSE_JSON_SIZE * sizeof(jsmntok_t));
-    if(tokens == NULL)
-        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
-
-    if((result=getServerResponse(&string, tokens, SEND_MOVE_RESPONSE_JSON_SIZE)) != ALL_GOOD)
+    jsmntok_t* tokens;
+    if((result=getServerResponse(&string, &tokens, SEND_MOVE_RESPONSE_JSON_SIZE)) != ALL_GOOD)
         return printError(__FUNCTION__, result, "Server response failed");
 
     // Call the function related to the selected game to properly unpack the data
@@ -317,11 +306,9 @@ ResultCode sendMove(const MoveData *moveData, MoveResult* moveResult) {
 
     // Get server acknowledgement
     char* string;
-    jsmntok_t* tokens = (jsmntok_t *) malloc(SEND_MOVE_RESPONSE_JSON_SIZE * sizeof(jsmntok_t));
-    if(tokens == NULL)
-        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
+    jsmntok_t* tokens;
 
-    if((result=getServerResponse(&string, tokens, SEND_MOVE_RESPONSE_JSON_SIZE)) != ALL_GOOD)
+    if((result=getServerResponse(&string, &tokens, SEND_MOVE_RESPONSE_JSON_SIZE)) != ALL_GOOD)
         return printError(__FUNCTION__, result, "Server response failed");
 
     if((result=unpackSendMoveResult(string, tokens, moveResult)) != ALL_GOOD)
@@ -345,11 +332,8 @@ ResultCode getBoardState(BoardState* boardState) {
 
     // Get server acknowledgement
     char* string;
-    jsmntok_t* tokens = (jsmntok_t *) malloc(BOARD_STATE_RESPONSE_JSON_SIZE * sizeof(jsmntok_t));
-    if(tokens == NULL)
-        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
-
-    if((result=getServerResponse(&string, tokens, BOARD_STATE_RESPONSE_JSON_SIZE)) != ALL_GOOD)
+    jsmntok_t* tokens;
+    if((result=getServerResponse(&string, &tokens, BOARD_STATE_RESPONSE_JSON_SIZE)) != ALL_GOOD)
         return printError(__FUNCTION__, result, "Server response failed");
 
     // Call the function related to the selected game to properly unpack the data
@@ -387,15 +371,9 @@ ResultCode sendMessage(const char *message) {
 
     // Get server acknowledgement
     char* string;
-    jsmntok_t* tokens = (jsmntok_t *) malloc(SERVER_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
-    if(tokens == NULL)
-        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
-
-    if((result=getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) != ALL_GOOD)
+    if((result=getServerResponse(&string, NULL, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) != ALL_GOOD)
         return printError(__FUNCTION__, result, "Server response failed");
-
     free(string);
-    free(tokens);
 
     // Return success
     return ALL_GOOD;
@@ -415,11 +393,8 @@ ResultCode printBoard() {
 
     // Get server acknowledgement
     char* string;
-    jsmntok_t* tokens = (jsmntok_t *) malloc(SERVER_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
-    if(tokens == NULL)
-        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
-
-    if((result=getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) != ALL_GOOD)
+    jsmntok_t* tokens;
+    if((result=getServerResponse(&string, &tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) != ALL_GOOD)
         return printError(__FUNCTION__, result, "Server response failed");
 
     int blockLength = atoi(&string[tokens[4].start]) + 1;
@@ -458,17 +433,15 @@ ResultCode quitGame() {
 
     // Get server acknowledgement
     char* string;
-    jsmntok_t* tokens = (jsmntok_t *) malloc(SERVER_ACKNOWLEDGEMENT_JSON_SIZE * sizeof(jsmntok_t));
-    if(tokens == NULL)
-        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
-
-    if((result=getServerResponse(&string, tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) != ALL_GOOD)
+    jsmntok_t* tokens;
+    if((result=getServerResponse(&string, &tokens, SERVER_ACKNOWLEDGEMENT_JSON_SIZE)) != ALL_GOOD)
         return printError(__FUNCTION__, result, "Server response failed");
-
     free(string);
     free(tokens);
 
-    //TODO: close the socket !
+    // Close the socket !
+    close(SOCKET);
+    printDebugMessage(__FUNCTION__, DEBUG, "Connection closed");
 
     // Return success
     return ALL_GOOD;
@@ -568,32 +541,51 @@ static ResultCode sendData(const char *data, unsigned int dataLength) {
     return ALL_GOOD;
 }
 
-static ResultCode getServerResponse(char **string, jsmntok_t *tokens, int nbTokens) {
+// tokens can be NULL if we don't care about the answer
+static ResultCode getServerResponse(char **string, jsmntok_t **tokens, int nbMaxTokens) {
     int stringLength;
     ResultCode result;
+    bool nullTokens = false;
 
     // Get data
     if((result=getData(string, &stringLength)) != ALL_GOOD)
         return result;
-    
+    printDebugMessage(__FUNCTION__, INTERN_DEBUG, "Server answered: %s", *string);
+
     // Instantiate json parser
     jsmn_parser parser;
     jsmn_init(&parser);
 
     // Parse json string
-    jsmn_parse(&parser, *string, stringLength, tokens, nbTokens);
+    if (tokens == NULL) {
+        tokens = (jsmntok_t **) malloc(sizeof(jsmntok_t**));
+        if(tokens == NULL)
+            return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
+        nullTokens = true;
+    }
+    *tokens = (jsmntok_t *) malloc(nbMaxTokens * sizeof(jsmntok_t));
+    if(*tokens == NULL)
+        return printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, "");
+    jsmn_parse(&parser, *string, stringLength, *tokens, nbMaxTokens);
 
     // Get state infos
-    int state = atoi(&(*string)[tokens[2].start]);
-    
+    int state = getIntFromTokens(*string, "state", *tokens, nbMaxTokens);
+
     // Print error if needed
     if(!state) {
-        int blockLength = tokens[4].end - tokens[4].start;
-        return printError(__FUNCTION__, OTHER_ERROR, "Server responded with following error: %.*s\n", blockLength, (*string + tokens[4].start));
+        char* error = getStringFromTokens(*string, "error", *tokens, nbMaxTokens);
+        printError(__FUNCTION__, OTHER_ERROR, "Server responded with following error: %s\n", error);
+        free(error);
+        return OTHER_ERROR;
+    }
+
+    // dealloc if tokens was passed as NULL
+    if (nullTokens) {
+        free(*tokens);
+        free(tokens);
     }
 
     // Return success
-    printDebugMessage(__FUNCTION__, INTERN_DEBUG, "Server answered: %s", *string);
     return ALL_GOOD;
 }
 
@@ -723,4 +715,52 @@ void printDebugMessage(const char* function, unsigned int level, const char* mes
         printf("\x1b[0m\n");
         va_end(args);
     }
+}
+
+int getIntFromTokens(const char *string, const char* prop, const jsmntok_t *tokens, int nbMaxTokens) {
+    int i;
+    // search for the token
+    for (i=1; i<nbMaxTokens; i+=2) {
+        if ((tokens[i].type == JSMN_STRING) && !strncmp(prop, string+tokens[i].start, tokens[i].end - tokens[i].start))
+            break;
+    }
+    // if not found
+    if (i>=nbMaxTokens) {
+        printError(__FUNCTION__, SERVER_ERROR, "Cannot parse the server message, looking for int value for `%s` in message %s", prop, string);
+        return 0;
+    }
+    // if found
+    char* st = (char *) malloc(tokens[i+1].end - tokens[i+1].start + 1);
+    if (st == NULL)
+        printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, NULL);
+    strncpy(st, string+tokens[i+1].start, tokens[i+1].end - tokens[i+1].start);
+    char *stopped;
+    int integer = (int) strtol(st, &stopped, 10);
+    if (*stopped)
+        printError(__FUNCTION__, SERVER_ERROR, "Cannot parse the server message, the value associated to `%s` is not an integer in message %s", prop, string);
+    free(st);
+    return integer;
+
+
+}
+
+char* getStringFromTokens(const char *string, const char* prop, const jsmntok_t *tokens, int nbMaxTokens) {
+    int i;
+    // search for the token
+    for (i=1; i<nbMaxTokens; i+=2) {
+        if ((tokens[i].type == JSMN_STRING) && !strncmp(prop, string+tokens[i].start, tokens[i].end - tokens[i].start))
+            break;
+    }
+    // if not found
+    if (i>=nbMaxTokens) {
+        printError(__FUNCTION__, SERVER_ERROR, "Cannot parse the server message, looking for string value for `%s` in message %s", prop, string);
+        return 0;
+    }
+    // if found
+    char* st = (char *) malloc(tokens[i+1].end - tokens[i+1].start + 1);
+    if (st == NULL)
+        printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, NULL);
+    strncpy(st, string+tokens[i+1].start, tokens[i+1].end - tokens[i+1].start);
+    char *stopped;
+    return st;
 }

@@ -103,25 +103,7 @@ typedef enum {
     BotsNamesMax // Keep as last element
 } BotsNames;
 
-typedef struct {
-    GamesType gameType; // One of GamesTypes values
-    BotsNames botId; // One of BotsName values (only if you play in training)
 
-    unsigned int timeout; // Timeout in seconds, max value 60, default 15 (used only in training mode, tournament mode is set to 15)
-    unsigned char starter; // Define who starts, 1 -> you or 2 -> opponent, set to 0 for random, default 0 (used only in training mode)
-    unsigned int seed; // Seed for the board generation, useful when debugging to play the same game again, max value 9999, default to 0 for random (used only in training mode)
-    
-    unsigned char reconnect; // Set 1 if you want to reconnect to a game you already started, default 0
-} GameSettings;
-
-typedef struct {
-    char* gameName; // String containing the game name
-    int gameSeed; // Contain the seed used for the game board generation (if you didn't provide one)
-    int starter; // Defines who start, 1 you and 2 opponent
-
-    int nbElements; // Total number of elements on the board
-    int* boardData; // Board data, an array containing unformatted board data
-} GameData;
 
 typedef enum {
     CLAIM_ROUTE = 0x1,  // Claim a route between two cities
@@ -192,9 +174,7 @@ typedef struct MoveResult_ {
 } MoveResult;
 
 typedef struct {
-    union {
         CardColor card[5]; // Visible cards
-    };
 } BoardState;
 
 typedef enum {
@@ -205,6 +185,29 @@ typedef enum {
 
     StateMax // Keep as last element
 } MoveState;
+
+
+typedef struct {
+    GamesType gameType; // One of GamesTypes values
+    BotsNames botId; // One of BotsName values (only if you play in training)
+
+    unsigned int timeout; // Timeout in seconds, max value 60, default 15 (used only in training mode, tournament mode is set to 15)
+    unsigned char starter; // Define who starts, 1 -> you or 2 -> opponent, set to 0 for random, default 0 (used only in training mode)
+    unsigned int seed; // Seed for the board generation, useful when debugging to play the same game again, max value 9999, default to 0 for random (used only in training mode)
+
+    unsigned char reconnect; // Set 1 if you want to reconnect to a game you already started, default 0
+} GameSettings;
+
+typedef struct {
+    char* gameName; // String containing the game name
+    int gameSeed; // Contain the seed used for the game board generation (if you didn't provide one)
+    int starter; // Defines who start, 1 you and 2 opponent
+
+    int nbCities; // Total number of cities in the map
+    int nbTracks;   // total number of tracks
+    int* trackData; // Track data, an array containing unformatted data about the tracks
+    CardColor cards[4];
+} GameData;
 
 
 
