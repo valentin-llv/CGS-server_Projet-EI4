@@ -87,7 +87,7 @@ ResultCode printError(const char* function, ResultCode code, const char* message
 void printDebugMessage(const char* function, unsigned int level, const char* message, ...);
 int getIntFromTokens(const char *string, const char* prop, const jsmntok_t *tokens, int nbMaxTokens);
 char* getStringFromTokens(const char *string, const char* prop, const jsmntok_t *tokens, int nbMaxTokens);
-
+int searchInTokens(const char *string, const char* prop, const jsmntok_t *tokens, int nbMaxTokens);
 
 /*
 
@@ -573,6 +573,7 @@ static ResultCode getServerResponse(char **string, jsmntok_t **tokens, int nbMax
 
     // Print error if needed
     if(!state) {
+        // get the error
         char* error = getStringFromTokens(*string, "error", *tokens, nbMaxTokens);
         printError(__FUNCTION__, OTHER_ERROR, "Server responded with following error: %s\n", error);
         free(error);
@@ -718,33 +719,38 @@ void printDebugMessage(const char* function, unsigned int level, const char* mes
 }
 
 int getIntFromTokens(const char *string, const char* prop, const jsmntok_t *tokens, int nbMaxTokens) {
-    int i;
-    // search for the token
-    for (i=1; i<nbMaxTokens; i+=2) {
-        if ((tokens[i].type == JSMN_STRING) && !strncmp(prop, string+tokens[i].start, tokens[i].end - tokens[i].start))
-            break;
-    }
-    // if not found
+    int i = searchInTokens(string, prop, tokens, nbMaxTokens);
     if (i>=nbMaxTokens) {
-        printError(__FUNCTION__, SERVER_ERROR, "Cannot parse the server message, looking for int value for `%s` in message %s", prop, string);
-        return 0;
+        char* st = (char *) malloc(tokens[i+1].end - tokens[i+1].start + 1);
+        if (st == NULL)
+            printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, NULL);
+        strncpy(st, string+tokens[i+1].start, tokens[i+1].end - tokens[i+1].start);
+        char *stopped;
+        int integer = (int) strtol(st, &stopped, 10);
+        if (*stopped)
+            printError(__FUNCTION__, SERVER_ERROR, "Cannot parse the server message, the value associated to `%s` is not an integer in message %s", prop, string);
+        free(st);
+        return integer;
     }
-    // if found
-    char* st = (char *) malloc(tokens[i+1].end - tokens[i+1].start + 1);
-    if (st == NULL)
-        printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, NULL);
-    strncpy(st, string+tokens[i+1].start, tokens[i+1].end - tokens[i+1].start);
-    char *stopped;
-    int integer = (int) strtol(st, &stopped, 10);
-    if (*stopped)
-        printError(__FUNCTION__, SERVER_ERROR, "Cannot parse the server message, the value associated to `%s` is not an integer in message %s", prop, string);
-    free(st);
-    return integer;
-
+    return 0;
 
 }
 
 char* getStringFromTokens(const char *string, const char* prop, const jsmntok_t *tokens, int nbMaxTokens) {
+    int i = searchInTokens(string, prop, tokens, nbMaxTokens);
+    if (i>=nbMaxTokens) {
+        char* st = (char *) malloc(tokens[i+1].end - tokens[i+1].start + 1);
+        if (st == NULL)
+            printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, NULL);
+        strncpy(st, string+tokens[i+1].start, tokens[i+1].end - tokens[i+1].start);
+        char *stopped;
+        return st;
+    }
+    else return "";
+}
+
+// get the index where a given property `prop` can be found. The associate value should be at the next index
+int searchInTokens(const char *string, const char* prop, const jsmntok_t *tokens, int nbMaxTokens) {
     int i;
     // search for the token
     for (i=1; i<nbMaxTokens; i+=2) {
@@ -754,13 +760,6 @@ char* getStringFromTokens(const char *string, const char* prop, const jsmntok_t 
     // if not found
     if (i>=nbMaxTokens) {
         printError(__FUNCTION__, SERVER_ERROR, "Cannot parse the server message, looking for string value for `%s` in message %s", prop, string);
-        return 0;
     }
-    // if found
-    char* st = (char *) malloc(tokens[i+1].end - tokens[i+1].start + 1);
-    if (st == NULL)
-        printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, NULL);
-    strncpy(st, string+tokens[i+1].start, tokens[i+1].end - tokens[i+1].start);
-    char *stopped;
-    return st;
+    return i;
 }
