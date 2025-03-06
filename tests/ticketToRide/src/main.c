@@ -8,7 +8,8 @@ extern int debug = 1;
 
 int main() {
     // cgs.valentin-lelievre.com
-    int result = connectToCGS("192.168.1.122", 15001);
+    // int result = connectToCGS("192.168.1.122", 15001);
+    int result = connectToCGS("cgs.valentin-lelievre.com", 15001);
 
     if(!result) return 1;
 

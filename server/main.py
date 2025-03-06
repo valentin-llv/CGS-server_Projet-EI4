@@ -16,7 +16,7 @@ from user.user import User
 
 from gamesManager.gamesManager import GamesManager
 
-from utils.memoryAnalyser import simpleMemoryVisualiser
+# from utils.memoryAnalyser import simpleMemoryVisualiser
 
 def main():
 	# Parse command line arguments
@@ -63,7 +63,7 @@ commandsActionsDict = {
 	"listGames": GamesManager.getInstance().listRunningGames,
 	"listBots": GameRef.listAvailableBots,
 
-	"analyzeMemory": simpleMemoryVisualiser,
+	# "analyzeMemory": simpleMemoryVisualiser,
 
 	"exit": exit,
 }
