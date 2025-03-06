@@ -18,7 +18,7 @@ int main() {
         printf("Création d'une nouvelle partie\n");
 
         GameSettings gameSettings = GameSettingsDefaults;
-        gameSettings.gameType = TRAINNING;
+        gameSettings.gameType = TRAINING;
         gameSettings.botId = RANDOM_PLAYER;
         gameSettings.timeout = 15;
         gameSettings.starter = 2;
@@ -181,7 +181,7 @@ int main() {
         }
 
         free(gameData.gameName);
-        free(gameData.boardData);
+        // free(gameData.boardData);
 
         printf("La partie est finie, le joueur quitte la partie\n");
         if(!quitGame()) return 1;

@@ -729,7 +729,11 @@ int getIntFromTokens(const char *string, const char* prop, const jsmntok_t *toke
         char* st = (char *) malloc(tokens[i+1].end - tokens[i+1].start + 1);
         if (st == NULL)
             printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, NULL);
+
+        // Fill st with 0
+        memset(st, 0, tokens[i+1].end - tokens[i+1].start + 1);
         strncpy(st, string+tokens[i+1].start, tokens[i+1].end - tokens[i+1].start);
+
         char *stopped;
         int integer = (int) strtol(st, &stopped, 10);
         if (*stopped)

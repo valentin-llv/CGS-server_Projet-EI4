@@ -153,7 +153,7 @@ class User(Player, threading.Thread):
 			gameSettings = self.game.getGameSettings()
 			self.sendMsg({
 				"state": 1, # OK
-				"gameName": self.game.id,
+				"gameName": "Game " + str(self.game.id),
 				"gameSeed": self.game.seed,
 				"starter": 2 if self.game.players[self.game.whoPlays] == self else 1,
 				# "boardWidth": self.game.width,

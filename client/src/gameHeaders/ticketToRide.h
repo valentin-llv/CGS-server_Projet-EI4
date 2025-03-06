@@ -205,7 +205,7 @@ typedef struct {
 
     int nbCities; // Total number of cities in the map
     int nbTracks;   // total number of tracks
-    int* trackData; // Track data, an array containing unformatted data about the tracks
+    char* trackData; // Track data, an array containing unformatted data about the tracks
     CardColor cards[4];
 } GameData;
 

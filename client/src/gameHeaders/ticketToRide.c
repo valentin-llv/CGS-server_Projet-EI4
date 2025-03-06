@@ -27,8 +27,37 @@ int packGameSettings(char* data, GameSettings gameSettings) {
     return dataLength;
 }
 
+int getIntFromTokens(const char *string, const char* prop, const jsmntok_t *tokens, int nbMaxTokens);
+int searchInTokens(const char *string, const char* prop, const jsmntok_t *tokens, int nbMaxTokens);
+
 ResultCode unpackGameSettingsData(char *string, jsmntok_t *tokens, GameData *gameData) {
-    // Nothing todo here for this game
+    printf("Unpacking game settings\n");
+
+    printf("String: %s\n", string);
+
+    gameData->nbCities = getIntFromTokens(string, "nbCities", tokens, 19);
+    gameData->nbTracks = getIntFromTokens(string, "nbTracks", tokens, 19);
+
+    int tokenIndex = searchInTokens(string, "trackData", tokens, 19);
+    char* tracksArray = (char *) malloc((tokens[tokenIndex+1].end - tokens[tokenIndex+1].start) * sizeof(char));
+    if(tracksArray == NULL) return MEMORY_ALLOCATION_ERROR;
+
+    memcpy(tracksArray, string+tokens[tokenIndex+1].start, tokens[tokenIndex+1].end - tokens[tokenIndex+1].start);
+    gameData->trackData = tracksArray;
+
+    int cardsIndex = searchInTokens(string, "playerCard", tokens, 19);
+    int deckCards = 0;
+    for(int i = 0; i < 10 * 3; i += 3) {
+        int cardCount = (unsigned int) atoi(string+tokens[cardsIndex + 1].start + i);
+        
+        if(cardCount > 0) {
+            CardColor card = i / 3;
+            gameData->cards[deckCards] = card;
+
+            deckCards += 1;
+        }
+    }
+    
     return ALL_GOOD;
 }
 
