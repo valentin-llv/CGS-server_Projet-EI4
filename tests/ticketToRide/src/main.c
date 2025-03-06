@@ -4,6 +4,8 @@
 
 #include "../../../client/src/gameHeaders/ticketToRide.h"
 
+extern int debug = 1;
+
 int main() {
     // cgs.valentin-lelievre.com
     int result = connectToCGS("192.168.1.122", 15001);

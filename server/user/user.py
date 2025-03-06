@@ -149,17 +149,18 @@ class User(Player, threading.Thread):
 		if event == "joinedGame":
 			self.game = data["game"]
 
-			board = self.game.getBoard()
+			# board = self.game.getBoard()
+			gameSettings = self.game.getGameSettings()
 			self.sendMsg({
 				"state": 1, # OK
 				"gameName": self.game.id,
 				"gameSeed": self.game.seed,
 				"starter": 2 if self.game.players[self.game.whoPlays] == self else 1,
-				"boardWidth": self.game.width,
-				"boardHeight": self.game.height,
-				"nbElements": len(board),
-				"boardData": board,
-			})
+				# "boardWidth": self.game.width,
+				# "boardHeight": self.game.height,
+				# "nbElements": len(board),
+				# "boardData": board,
+			} | gameSettings)
 
 			self.state = StateMachine.PLAYING_GAME
 

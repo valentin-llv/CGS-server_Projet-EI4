@@ -2,7 +2,7 @@ logs
 
 **/**/dist
 
-**/**/**.pyc
+**/**.pyc
 **/**/*.o
 
 **/**/valgrind-out.txt

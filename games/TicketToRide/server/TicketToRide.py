@@ -140,6 +140,18 @@ class TicketToRide(Game):
 
 	def getBoard(self):
 		return self.getData(self.players[0]) # TODO do not set player
+	
+	def getGameSettings(self):
+		"""
+		Returns the settings of the game
+		"""
+		return {
+			"nbCities": self._theMap.nbCities,
+			"nbTracks": self._theMap.nbTracks,
+			"trackData": self._theMap.data,
+
+			"playerCard": self._cards[0] # TODO: do not set 0 but the player
+		}
 
 	def HTMLrepr(self):
 		"""Returns an HTML representation of your game"""

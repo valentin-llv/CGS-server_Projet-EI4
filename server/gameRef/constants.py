@@ -1,1 +1,1 @@
-REQUIRED_FOLDERS = ["server", "api"]
+REQUIRED_FOLDERS = ["server"]
