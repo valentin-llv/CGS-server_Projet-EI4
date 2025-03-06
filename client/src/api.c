@@ -212,10 +212,15 @@ ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
      if((result=getServerResponse(&string, &tokens, GAME_SETTINGS_ACKNOWLEDGEMENT_JSON_SIZE)) != ALL_GOOD)
         return printError(__FUNCTION__, result, "Server response failed");
 
-    // TODO create special unpack game settings function
 
     // Set struct from param to defaults values
     *gameData = GameDataDefaults;
+
+    // get nameName, gameSeed and starter
+    gameData->gameName = getStringFromTokens(string, "gameName", tokens, GAME_SETTINGS_ACKNOWLEDGEMENT_JSON_SIZE);
+    gameData->gameSeed = getIntFromTokens(string, "gameSeed", tokens, GAME_SETTINGS_ACKNOWLEDGEMENT_JSON_SIZE);
+    gameData->starter = getIntFromTokens(string, "starter", tokens, GAME_SETTINGS_ACKNOWLEDGEMENT_JSON_SIZE);
+
 /*
     // Load received data into struct
     int blockLength = tokens[4].end - tokens[4].start + 1;
@@ -244,10 +249,10 @@ ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
     }
 
     gameData->boardData = boardData;
-
+*/
     if((result=unpackGameSettingsData(string, tokens, gameData)) != ALL_GOOD)
         return printError(__FUNCTION__, result, "Failed to unpack game settings");
-*/
+
     free(string);
 
     // Return success
@@ -720,7 +725,7 @@ void printDebugMessage(const char* function, unsigned int level, const char* mes
 
 int getIntFromTokens(const char *string, const char* prop, const jsmntok_t *tokens, int nbMaxTokens) {
     int i = searchInTokens(string, prop, tokens, nbMaxTokens);
-    if (i>=nbMaxTokens) {
+    if (i<nbMaxTokens) {
         char* st = (char *) malloc(tokens[i+1].end - tokens[i+1].start + 1);
         if (st == NULL)
             printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, NULL);
@@ -738,12 +743,11 @@ int getIntFromTokens(const char *string, const char* prop, const jsmntok_t *toke
 
 char* getStringFromTokens(const char *string, const char* prop, const jsmntok_t *tokens, int nbMaxTokens) {
     int i = searchInTokens(string, prop, tokens, nbMaxTokens);
-    if (i>=nbMaxTokens) {
+    if (i<nbMaxTokens) {
         char* st = (char *) malloc(tokens[i+1].end - tokens[i+1].start + 1);
         if (st == NULL)
             printError(__FUNCTION__, MEMORY_ALLOCATION_ERROR, NULL);
         strncpy(st, string+tokens[i+1].start, tokens[i+1].end - tokens[i+1].start);
-        char *stopped;
         return st;
     }
     else return "";
