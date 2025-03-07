@@ -148,7 +148,8 @@ class TicketToRide(Game):
 		return {
 			"nbCities": self._theMap.nbCities,
 			"nbTracks": self._theMap.nbTracks,
-			"trackData": self._theMap.data,
+			"trackData": "\n".join([str(tr) for tr in self._theMap._tracks]),
+			"cities": "\n".join([c.name.replace(' ', '_') for c in self._theMap._cities]),
 
 			"playerCard": self._cards[0] # TODO: do not set 0 but the player
 		}

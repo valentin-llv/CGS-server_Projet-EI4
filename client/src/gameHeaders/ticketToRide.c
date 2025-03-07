@@ -29,11 +29,11 @@ int packGameSettings(char* data, GameSettings gameSettings) {
 
 int getIntFromTokens(const char *string, const char* prop, const jsmntok_t *tokens, int nbMaxTokens);
 int searchInTokens(const char *string, const char* prop, const jsmntok_t *tokens, int nbMaxTokens);
+void printDebugMessage(const char* function, unsigned int level, const char* message, ...);
 
 ResultCode unpackGameSettingsData(char *string, jsmntok_t *tokens, GameData *gameData) {
-    printf("Unpacking game settings\n");
-
-    printf("String: %s\n", string);
+    // Print string
+    printDebugMessage(__FUNCTION__, INTERN_DEBUG, "Received data: %s", string);
 
     gameData->nbCities = getIntFromTokens(string, "nbCities", tokens, 19);
     gameData->nbTracks = getIntFromTokens(string, "nbTracks", tokens, 19);
