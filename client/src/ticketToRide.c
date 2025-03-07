@@ -5,10 +5,11 @@
 
 // This define is used by the JSON library
 #define JSMN_HEADER
-#include "../lib/json.h"
+#include "json.h"
 
 // Game headers
 #include "ticketToRide.h"
+#include "codingGameServer.h"
 
 /*
     Default values for struct
@@ -27,9 +28,6 @@ int packGameSettings(char* data, GameSettings gameSettings) {
     return dataLength;
 }
 
-int getIntFromTokens(const char *string, const char* prop, const jsmntok_t *tokens, int nbMaxTokens);
-int searchInTokens(const char *string, const char* prop, const jsmntok_t *tokens, int nbMaxTokens);
-void printDebugMessage(const char* function, unsigned int level, const char* message, ...);
 
 ResultCode unpackGameSettingsData(char *string, jsmntok_t *tokens, GameData *gameData) {
     // Print string
@@ -38,12 +36,7 @@ ResultCode unpackGameSettingsData(char *string, jsmntok_t *tokens, GameData *gam
     gameData->nbCities = getIntFromTokens(string, "nbCities", tokens, 19);
     gameData->nbTracks = getIntFromTokens(string, "nbTracks", tokens, 19);
 
-    int tokenIndex = searchInTokens(string, "trackData", tokens, 19);
-    char* tracksArray = (char *) malloc((tokens[tokenIndex+1].end - tokens[tokenIndex+1].start) * sizeof(char));
-    if(tracksArray == NULL) return MEMORY_ALLOCATION_ERROR;
-
-    memcpy(tracksArray, string+tokens[tokenIndex+1].start, tokens[tokenIndex+1].end - tokens[tokenIndex+1].start);
-    gameData->trackData = tracksArray;
+    char* tracksArray = getStringFromTokens(string, "trackData", tokens, 19);
 
     int cardsIndex = searchInTokens(string, "playerCard", tokens, 19);
     int deckCards = 0;

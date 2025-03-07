@@ -2,7 +2,7 @@
 
     Specific functions for the Ticket to Ride game.
 
-    Require api.c, api.h, lib/json.h to works with.
+    Require codingGameServer.c, codingGameServer.h, lib/json.h to works with.
 
     Authors: Valentin Le Lièvre
     Licence: GPL
@@ -205,7 +205,7 @@ typedef struct {
 
     int nbCities; // Total number of cities in the map
     int nbTracks;   // total number of tracks
-    char* trackData; // Track data, an array containing unformatted data about the tracks
+    int* trackData; // Track data, an array containing unformatted data about the tracks
     CardColor cards[4];
 } GameData;
 
@@ -241,7 +241,7 @@ ResultCode sendName(const char *name);
 // After sending your name you need to send game settings to the server to start a game.
 // You need to provide a GameSettings struct and a GameData struct to store the game data returned by the server.
 // You can use the GameSettingsDefaults and GameDataDefaults variables to initialize the struct with default values.
-// To fill the GameSettings struct you may want to use predefined constants available in api.h.
+// To fill the GameSettings struct you may want to use predefined constants available in codingGameServer.h.
 ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData);
 
 // During a game this function is used to know what your opponent did during his turn.
