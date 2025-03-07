@@ -145,14 +145,18 @@ class TicketToRide(Game):
 		"""
 		Returns the settings of the game
 		"""
+		# get the 4 cards (see https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists for the sum)
+		cards = sum([nb*[idx,] for idx, nb in enumerate(self._cards[0]) if nb>0],[])
 		return {
 			"nbCities": self._theMap.nbCities,
 			"nbTracks": self._theMap.nbTracks,
 			"trackData": " ".join([str(tr) for tr in self._theMap._tracks]),
 			"cities": " ".join([c.name.replace(' ', '_') for c in self._theMap._cities]),
 
-			"playerCard": " ".join([str(c) for c in self._cards[0]]), # TODO: do not set 0 but the player
+			"playerCard": " ".join(map(str, cards))	 # TODO: do not set 0 but the player
 		}
+
+
 
 	def HTMLrepr(self):
 		"""Returns an HTML representation of your game"""
