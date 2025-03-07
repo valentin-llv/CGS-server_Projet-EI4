@@ -9,6 +9,7 @@ def createSocketServer(adress, port):
 	# Configure socket server
 	server: socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	server.bind((adress, port))
+	#TODO: catch errors like "OSError: [Errno 48] Address already in use"
 
 	server.listen()
 	logger.message(f"Server listen at adress {adress} on port {port}")
