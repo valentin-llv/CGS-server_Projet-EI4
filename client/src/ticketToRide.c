@@ -58,7 +58,7 @@ ResultCode unpackGameSettingsData(char *string, jsmntok_t *tokens, GameData *gam
     sscanf(cardsArray, "%d %d %d %d %d", (int*)gameData->cards, (int*)gameData->cards+1, (int*)gameData->cards+2, (int*)gameData->cards+3, (int*)gameData->cards+4);
     free(cardsArray);
 
-    // retrieve the cities
+    // retrieve the city names
     char* cities = getStringFromTokens(string, "cities", tokens, 19);
     cityNames = (char **)malloc(gameData->nbCities * sizeof(char *));
     if (!cityNames) return MEMORY_ALLOCATION_ERROR;
@@ -101,7 +101,7 @@ int packSendMoveData(char* data, const MoveData *moveData) {
             break;
         case CHOOSE_OBJECTIVES:
             dataLength = sprintf(data, "{ 'action': 'sendMove', 'move': %d, 'selectCard': [%d, %d, %d] }",
-                CHOOSE_OBJECTIVES, moveData->chooseObjectves.selectCard[0], moveData->chooseObjectves.selectCard[1], moveData->chooseObjectves.selectCard[2]);
+                CHOOSE_OBJECTIVES, moveData->chooseObjectives.selectCard[0], moveData->chooseObjectives.selectCard[1], moveData->chooseObjectives.selectCard[2]);
             break;
         default:
             return -1;
@@ -140,9 +140,9 @@ ResultCode unpackGetMoveData(char* string, jsmntok_t* tokens, MoveData* moveData
             moveData->drawCard.card = (CardColor) atoi(&string[tokens[12].start]);
             break;
         case CHOOSE_OBJECTIVES:
-            moveData->chooseObjectves.selectCard[0] = (unsigned int) atoi(&string[tokens[12].start]);
-            moveData->chooseObjectves.selectCard[1] = (unsigned int) atoi(&string[tokens[14].start]);
-            moveData->chooseObjectves.selectCard[2] = (unsigned int) atoi(&string[tokens[16].start]);
+            moveData->chooseObjectives.selectCard[0] = (unsigned int) atoi(&string[tokens[12].start]);
+            moveData->chooseObjectives.selectCard[1] = (unsigned int) atoi(&string[tokens[14].start]);
+            moveData->chooseObjectives.selectCard[2] = (unsigned int) atoi(&string[tokens[16].start]);
             break;
         case DRAW_BLIND_CARD:
             // No additional data to unpack
@@ -209,9 +209,9 @@ ResultCode unpackGetBoardState(char* string, jsmntok_t* tokens, BoardState* boar
 }
 
 // Prints the city name
-ResultCode printCity(int cityId) {
+ResultCode printCity(unsigned int cityId) {
     // check the parameters
-    if (cityId < 0 || cityId >= nbCities) return PARAM_ERROR;
+    if (cityId >= nbCities) return PARAM_ERROR;
     // print the name
     printf("%s", cityNames[cityId]);
     return ALL_GOOD;

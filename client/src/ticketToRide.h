@@ -130,14 +130,12 @@ typedef enum {
 typedef struct {
     unsigned int from;
     unsigned int to;
-
     unsigned int score;
 } Objective;
 
 typedef struct {
     unsigned int from;
     unsigned int to;
-
     CardColor color;
     unsigned int nbLocomotives;
 } ClaimRouteMove;
@@ -156,7 +154,7 @@ typedef struct {
     union {
         ClaimRouteMove claimRoute;
         DrawCardMove drawCard;
-        ChooseObjectivesMove chooseObjectves;
+        ChooseObjectivesMove chooseObjectives;
     };
 } MoveData;
 
@@ -265,7 +263,7 @@ ResultCode sendMessage(const char *message);
 ResultCode printBoard();
 
 // Prints the city name
-ResultCode printCity(int cityId);
+ResultCode printCity(unsigned int cityId);
 
 // This function is used to quit the currently running game.
 ResultCode quitGame();
