@@ -205,6 +205,7 @@ typedef struct {
     int nbCities; // Total number of cities in the map
     int nbTracks;   // total number of tracks
     int* trackData; // Track data, an array containing unformatted data about the tracks
+    char** citiesName;  // array of `nbCities` names
     CardColor cards[4];
 } GameData;
 
@@ -262,6 +263,9 @@ ResultCode sendMessage(const char *message);
 // This function is used to display the game board during a game.
 // It will print the colored board in the console.
 ResultCode printBoard();
+
+// Prints the city name
+ResultCode printCity(int cityId);
 
 // This function is used to quit the currently running game.
 ResultCode quitGame();

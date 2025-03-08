@@ -19,6 +19,9 @@
 const GameSettings GameSettingsDefaults = { TRAINING, RANDOM_PLAYER, 10, 0, 0, 0 };
 const GameData GameDataDefaults = { "", 0, 0, 0, 0 };
 
+int nbCities = 0;
+char** cityNames = NULL;
+
 /*
     Functions
 */
@@ -33,7 +36,7 @@ ResultCode unpackGameSettingsData(char *string, jsmntok_t *tokens, GameData *gam
     // Print string
     printDebugMessage(__FUNCTION__, INTERN_DEBUG, "Received data: %s", string);
 
-    gameData->nbCities = getIntFromTokens(string, "nbCities", tokens, 19);
+    nbCities = gameData->nbCities = getIntFromTokens(string, "nbCities", tokens, 19);
     gameData->nbTracks = getIntFromTokens(string, "nbTracks", tokens, 19);
 
     // retrieve the tracks data
@@ -41,6 +44,7 @@ ResultCode unpackGameSettingsData(char *string, jsmntok_t *tokens, GameData *gam
     char* p = tracksArray;
     int nbchar;
     gameData->trackData = (int*) malloc(sizeof(int) * gameData->nbTracks);
+    if (!gameData->trackData) return MEMORY_ALLOCATION_ERROR;
     int* ptr = gameData->trackData;
     for(int i=0; i < gameData->nbTracks; i++){
         sscanf(p, "%d %d %d %d %d %n", ptr, ptr+1, ptr+2, ptr+3, ptr+4, &nbchar);
@@ -53,6 +57,28 @@ ResultCode unpackGameSettingsData(char *string, jsmntok_t *tokens, GameData *gam
     char* cardsArray = getStringFromTokens(string, "playerCards", tokens, 19);
     sscanf(cardsArray, "%d %d %d %d %d", (int*)gameData->cards, (int*)gameData->cards+1, (int*)gameData->cards+2, (int*)gameData->cards+3, (int*)gameData->cards+4);
     free(cardsArray);
+
+    // retrieve the cities
+    char* cities = getStringFromTokens(string, "cities", tokens, 19);
+    cityNames = (char **)malloc(gameData->nbCities * sizeof(char *));
+    if (!cityNames) return MEMORY_ALLOCATION_ERROR;
+    char* start = p = cities;
+    int index = 0;
+    while (1) {
+        if (*p == '|' || *p == '\0') {
+            size_t len = p - start;
+            cityNames[index] = (char *)malloc(len + 1); // +1 for null terminator
+            if (!cityNames[index]) return MEMORY_ALLOCATION_ERROR;
+            strncpy(cityNames[index], start, len);
+            cityNames[index][len] = '\0'; // Null-terminate the string
+            index++;
+            if (*p == '\0')
+                break; // End of string
+            start = p + 1;
+        }
+        p++;
+    }
+
     return ALL_GOOD;
 }
 
@@ -179,5 +205,14 @@ ResultCode unpackGetBoardState(char* string, jsmntok_t* tokens, BoardState* boar
     for(int i = 0; i < 5; i++)
         boardState->card[i] = (CardColor) atoi(&string[tokens[4 + i * 2].start]);
 
+    return ALL_GOOD;
+}
+
+// Prints the city name
+ResultCode printCity(int cityId) {
+    // check the parameters
+    if (cityId < 0 || cityId >= nbCities) return PARAM_ERROR;
+    // print the name
+    printf("%s", cityNames[cityId]);
     return ALL_GOOD;
 }
