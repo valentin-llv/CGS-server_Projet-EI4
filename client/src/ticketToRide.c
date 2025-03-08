@@ -51,7 +51,7 @@ ResultCode unpackGameSettingsData(char *string, jsmntok_t *tokens, GameData *gam
 
     // retrieve the 4 cards
     char* cardsArray = getStringFromTokens(string, "playerCards", tokens, 19);
-    sscanf(cardsArray, "%d %d %d %d %d %n", (int*)gameData->cards, (int*)gameData->cards+1, (int*)gameData->cards+2, (int*)gameData->cards+3, (int*)gameData->cards+4);
+    sscanf(cardsArray, "%d %d %d %d %d", (int*)gameData->cards, (int*)gameData->cards+1, (int*)gameData->cards+2, (int*)gameData->cards+3, (int*)gameData->cards+4);
     free(cardsArray);
     return ALL_GOOD;
 }
@@ -75,7 +75,7 @@ int packSendMoveData(char* data, const MoveData *moveData) {
             break;
         case CHOOSE_OBJECTIVES:
             dataLength = sprintf(data, "{ 'action': 'sendMove', 'move': %d, 'selectCard': [%d, %d, %d] }",
-                CHOOSE_OBJECTIVES, moveData->chooseObjectve.selectCard[0], moveData->chooseObjectve.selectCard[1], moveData->chooseObjectve.selectCard[2]);
+                CHOOSE_OBJECTIVES, moveData->chooseObjectves.selectCard[0], moveData->chooseObjectves.selectCard[1], moveData->chooseObjectves.selectCard[2]);
             break;
         default:
             return -1;
@@ -114,9 +114,9 @@ ResultCode unpackGetMoveData(char* string, jsmntok_t* tokens, MoveData* moveData
             moveData->drawCard.card = (CardColor) atoi(&string[tokens[12].start]);
             break;
         case CHOOSE_OBJECTIVES:
-            moveData->chooseObjectve.selectCard[0] = (unsigned int) atoi(&string[tokens[12].start]);
-            moveData->chooseObjectve.selectCard[1] = (unsigned int) atoi(&string[tokens[14].start]);
-            moveData->chooseObjectve.selectCard[2] = (unsigned int) atoi(&string[tokens[16].start]);
+            moveData->chooseObjectves.selectCard[0] = (unsigned int) atoi(&string[tokens[12].start]);
+            moveData->chooseObjectves.selectCard[1] = (unsigned int) atoi(&string[tokens[14].start]);
+            moveData->chooseObjectves.selectCard[2] = (unsigned int) atoi(&string[tokens[16].start]);
             break;
         case DRAW_BLIND_CARD:
             // No additional data to unpack

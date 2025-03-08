@@ -81,10 +81,9 @@ typedef enum {
 
 typedef enum {
     NO_DEBUG = 0x0,
-    STOP_ON_ERROR = 0x1,
-    MESSAGE = 0x2,
-    DEBUG = 0x3,
-    INTERN_DEBUG = 0x4
+    MESSAGE,
+    DEBUG,
+    INTERN_DEBUG
 } DebugLevel;
 
 
@@ -149,7 +148,7 @@ typedef struct {
 
 typedef struct {
     bool selectCard[3];     // Set to true in order to not take the i-th card
-} ChooseObjectiveMove;
+} ChooseObjectivesMove;
 
 typedef struct {
     Action action; // One of Actions values
@@ -157,7 +156,7 @@ typedef struct {
     union {
         ClaimRouteMove claimRoute;
         DrawCardMove drawCard;
-        ChooseObjectiveMove chooseObjectve;
+        ChooseObjectivesMove chooseObjectves;
     };
 } MoveData;
 
