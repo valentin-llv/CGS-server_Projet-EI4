@@ -153,7 +153,7 @@ class TicketToRide(Game):
 			"trackData": " ".join([str(tr) for tr in self._theMap._tracks]),
 			"cities": " ".join([c.name.replace(' ', '_') for c in self._theMap._cities]),
 
-			"playerCard": " ".join(map(str, cards))	 # TODO: do not set 0 but the player
+			"playerCards": " ".join(map(str, cards))	 # TODO: do not set 0 but the player
 		}
 
 

@@ -50,7 +50,7 @@ ResultCode unpackGameSettingsData(char *string, jsmntok_t *tokens, GameData *gam
     free(tracksArray);
 
     // retrieve the 4 cards
-    char* cardsArray = getStringFromTokens(string, "playerCard", tokens, 19);
+    char* cardsArray = getStringFromTokens(string, "playerCards", tokens, 19);
     sscanf(cardsArray, "%d %d %d %d %d %n", (int*)gameData->cards, (int*)gameData->cards+1, (int*)gameData->cards+2, (int*)gameData->cards+3, (int*)gameData->cards+4);
     free(cardsArray);
     return ALL_GOOD;
