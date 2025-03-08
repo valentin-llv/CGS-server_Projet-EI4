@@ -116,16 +116,16 @@ typedef enum {
 } Action;
 
 typedef enum {
-	PURPLE,
-	WHITE,
-	BLUE,
-	YELLOW,
-	ORANGE,
-	BLACK,
-	RED,
-	GREEN,
-    
-	LOCOMOTIVE
+    NONE = 0,
+    PURPLE = 1,
+	WHITE = 2,
+	BLUE = 3,
+	YELLOW = 4,
+	ORANGE = 5,
+	BLACK = 6,
+	RED = 7,
+	GREEN = 8,
+	LOCOMOTIVE = 9
 } CardColor;
 
 typedef struct {
