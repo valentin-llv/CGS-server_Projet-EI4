@@ -86,6 +86,16 @@ typedef enum {
     INTERN_DEBUG
 } DebugLevel;
 
+typedef enum {
+    NORMAL_MOVE = 0x1,
+    LOOSING_MOVE = 0x2,
+    WINNING_MOVE = 0x3,
+    ILLEGAL_MOVE = 0x4,
+
+    StateMax // Keep as last element
+} MoveState;
+
+
 
 typedef enum {
     TRAINING = 0x1, // Play against a bot
@@ -140,26 +150,19 @@ typedef struct {
     unsigned int nbLocomotives;
 } ClaimRouteMove;
 
-typedef struct {
-    CardColor card;
-} DrawCardMove;
-
-typedef struct {
-    bool selectCard[3];     // Set to true in order to not take the i-th card
-} ChooseObjectivesMove;
 
 typedef struct {
     Action action; // One of Actions values
 
     union {
-        ClaimRouteMove claimRoute;
-        DrawCardMove drawCard;
-        ChooseObjectivesMove chooseObjectives;
+        ClaimRouteMove claimRoute;      // the route we claim
+        CardColor drawCard;             // the card we draw
+        bool chooseObjectives[3];       // the objectives we choose
     };
 } MoveData;
 
 typedef struct MoveResult_ {
-    unsigned int state; // One of MoveState values
+    MoveState state; // One of MoveState values
 
     union {
         CardColor card;
@@ -173,16 +176,6 @@ typedef struct MoveResult_ {
 typedef struct {
         CardColor card[5]; // Visible cards
 } BoardState;
-
-typedef enum {
-    NORMAL_MOVE = 0x1,
-    LOOSING_MOVE = 0x2,
-    WINNING_MOVE = 0x3,
-    ILLEGAL_MOVE = 0x4,
-
-    StateMax // Keep as last element
-} MoveState;
-
 
 typedef struct {
     GamesType gameType; // One of GamesTypes values
@@ -203,7 +196,6 @@ typedef struct {
     int nbCities; // Total number of cities in the map
     int nbTracks;   // total number of tracks
     int* trackData; // Track data, an array containing unformatted data about the tracks
-    char** citiesName;  // array of `nbCities` names
     CardColor cards[4];
 } GameData;
 

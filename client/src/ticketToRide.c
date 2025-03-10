@@ -94,14 +94,14 @@ int packSendMoveData(char* data, const MoveData *moveData) {
             dataLength = sprintf(data, "{ 'action': 'sendMove', 'move': %d }", DRAW_BLIND_CARD);
             break;
         case DRAW_CARD:
-            dataLength = sprintf(data, "{ 'action': 'sendMove', 'move': %d, 'card': %d }", DRAW_CARD, moveData->drawCard.card);
+            dataLength = sprintf(data, "{ 'action': 'sendMove', 'move': %d, 'card': %d }", DRAW_CARD, moveData->drawCard);
             break;
         case DRAW_OBJECTIVES:
             dataLength = sprintf(data, "{ 'action': 'sendMove', 'move': %d }", DRAW_OBJECTIVES);
             break;
         case CHOOSE_OBJECTIVES:
             dataLength = sprintf(data, "{ 'action': 'sendMove', 'move': %d, 'selectCard': [%d, %d, %d] }",
-                CHOOSE_OBJECTIVES, moveData->chooseObjectives.selectCard[0], moveData->chooseObjectives.selectCard[1], moveData->chooseObjectives.selectCard[2]);
+                CHOOSE_OBJECTIVES, moveData->chooseObjectives[0], moveData->chooseObjectives[1], moveData->chooseObjectives[2]);
             break;
         default:
             return -1;
@@ -137,12 +137,12 @@ ResultCode unpackGetMoveData(char* string, jsmntok_t* tokens, MoveData* moveData
             moveData->claimRoute.nbLocomotives = atoi(&string[tokens[18].start]);
             break;
         case DRAW_CARD:
-            moveData->drawCard.card = (CardColor) atoi(&string[tokens[12].start]);
+            moveData->drawCard = (CardColor) atoi(&string[tokens[12].start]);
             break;
         case CHOOSE_OBJECTIVES:
-            moveData->chooseObjectives.selectCard[0] = (unsigned int) atoi(&string[tokens[12].start]);
-            moveData->chooseObjectives.selectCard[1] = (unsigned int) atoi(&string[tokens[14].start]);
-            moveData->chooseObjectives.selectCard[2] = (unsigned int) atoi(&string[tokens[16].start]);
+            moveData->chooseObjectives[0] = (unsigned int) atoi(&string[tokens[12].start]);
+            moveData->chooseObjectives[1] = (unsigned int) atoi(&string[tokens[14].start]);
+            moveData->chooseObjectives[2] = (unsigned int) atoi(&string[tokens[16].start]);
             break;
         case DRAW_BLIND_CARD:
             // No additional data to unpack
