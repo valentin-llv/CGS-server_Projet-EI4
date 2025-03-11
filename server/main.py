@@ -99,12 +99,14 @@ def loop():
 		pass
 
 if __name__ == "__main__":
-	# Loading variables from .env file
-	load_dotenv() 
+	# # Loading variables from .env file
+	# load_dotenv() 
 
-	if os.getenv('ENV') == "PROD":
-		import daemon
-		
-		with daemon.DaemonContext():
-			main()
-	else: main()
+	# if os.getenv('ENV') == "PROD":
+	# 	import daemon
+
+	# 	with daemon.DaemonContext():
+	# 		main()
+	# else: main()
+
+	main()
