@@ -274,7 +274,9 @@ class User(Player, threading.Thread):
 			elif int(move) == 3:
 				dict["cardColor"] = data["move"][2]
 			elif int(move) == 5:
-				dict["keepedObjectives"] = data["move"][2] + data["move"][4] + data["move"][6]
+				dict["keepedObjectives1"] = data["move"][2]
+				dict["keepedObjectives2"] = data["move"][4]
+				dict["keepedObjectives3"] = data["move"][6]
 
 				dict["message"] = "drawObjectives"
 
