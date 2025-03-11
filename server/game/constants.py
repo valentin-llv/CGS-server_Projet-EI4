@@ -1,5 +1,5 @@
 # Default timeout value
-TURN_TIMEOUT_DEFAULT = 60
+TURN_TIMEOUT_DEFAULT = 60 # in seconds
 
 # Default difficulty value, possible values are 1: easy, 2: normal, 3: hard
 DEFAULT_DIFFICULTY = 2

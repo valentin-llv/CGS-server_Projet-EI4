@@ -16,8 +16,6 @@ from user.user import User
 
 from gamesManager.gamesManager import GamesManager
 
-# from utils.memoryAnalyser import simpleMemoryVisualiser
-
 def main():
 	# Parse command line arguments
 	args = parseCmdArgs()
@@ -54,6 +52,12 @@ def main():
 	# Enter in a loop to keep the server running and register the commands
 	loop()
 
+"""
+
+	Interactive terminal commands
+
+"""
+
 commandsActionsDict = {
 	"listAvailablesGames": GameRef.listGames,
 
@@ -63,24 +67,34 @@ commandsActionsDict = {
 	"listGames": GamesManager.getInstance().listRunningGames,
 	"listBots": GameRef.listAvailableBots,
 
-	# "analyzeMemory": simpleMemoryVisualiser,
-
 	"exit": exit,
 }
+
+"""
+
+	Commands
+
+"""
 
 def printHelp():
 	print("Available commands are:")
 	for command in commandsActionsDict: print("-", command)
 
+"""
+
+	Main loop, interactive terminal
+
+"""
+
 def loop():
 	while True:
-		# command = input("")
+		command = input("")
 		
-		# if command in commandsActionsDict: commandsActionsDict[command]()
-		# elif command == "help": printHelp()
-		# else: print("Command not found, type 'help' to see available commands")
+		if command in commandsActionsDict: commandsActionsDict[command]()
+		elif command == "help": printHelp()
+		else: print("Command not found, type 'help' to see available commands")
 
-		# print(">> ", end = "")
+		print(">> ", end = "")
 		pass
 
 if __name__ == "__main__":

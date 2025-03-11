@@ -69,7 +69,7 @@ class GamesManager:
                 self.logger.message(f"Arrived in trainning with selected bot {botName}")
 
                 # In training mode, user can choose who starts
-                starter = 0 if int(gameSettings["starter"]) == 2 else (1 if int(gameSettings["starter"]) == 1 else None)
+                starter = 0 if int(gameSettings["starter"]) == 1 else (1 if int(gameSettings["starter"]) == 2 else None)
 
                 # Creating new game
                 newGame = GameRef.gameClass(user, bot, self.gameUidsCounter, start = starter, seed = int(gameSettings["seed"]))

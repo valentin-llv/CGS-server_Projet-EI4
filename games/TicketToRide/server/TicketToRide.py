@@ -14,17 +14,31 @@ File: TicketToRide.py
 	-> defines the Ticket To Ride game (its rules, moves, etc.)
 
 Copyright 2020 T. Hilaire
+
 """
 
-import sys, importlib
+import sys, importlib, random
+
+from re import compile
+from itertools import zip_longest
+from colorama import Style # TODO remove this
+
+"""
+
+	Base components import from the game server
+
+"""
 
 # Add the CGS server directory to the path
 sys.path.append("../../../server/")
 
-# Import files
+# Base class for a game
 Game = importlib.import_module("game.game").Game
+
+# General constants
 constants = importlib.import_module("game.constants")
 
+# Base class for a bot
 Bot = importlib.import_module("player.bot.bot").Bot
 
 # Assign constants
@@ -32,18 +46,32 @@ NORMAL_MOVE = constants.NORMAL_MOVE
 LOSING_MOVE = constants.LOSING_MOVE
 WINNING_MOVE = constants.WINNING_MOVE
 
-# Import bot players
-from bot.NiceBot import NiceBot
+"""
 
-BOTS = { 0x1: NiceBot }
+	Game components
 
-from re import compile
-from colorama import Style
-from random import shuffle, choice
-from itertools import zip_longest
+
+"""
+
 from Map import Map, longestPath
 from Cards import Deck, strCards
 from Constants import colorNames, tracksColors, MULTICOLOR, PURPLE, Scores, playerColors, checkChar
+
+# Import bots
+from bot.NiceBot import NiceBot
+
+"""
+
+	Game constants
+
+
+"""
+
+# Save available bots as a global variable
+BOTS = { 0x1: NiceBot }
+
+MAPS = ['USA', 'small', 'Europe']
+DEFAULT_MAP = 'USA'
 
 class MoveNames:
 	CLAIM_ROUTE = "1"
@@ -52,184 +80,180 @@ class MoveNames:
 	DRAW_OBJECTIVES = "4"
 	CHOOSE_OBJECTIVES = "5"
 
+"""
+
+	Main class
+
+"""
+
 class TicketToRide(Game):
 	"""
 	class TicketToRide (Ticket To Ride)
 
-	Inherits from Game
-	- players: tuple of the two players
-	- _logger: logger to use to log infos, debug, ...
-	- _name: name of the game
-	- whoPlays: number of the player who should play now (0 or 1)
-	- _waitingPlayer: Event used to wait for the players
-	- _lastMove, _last_return_code: string and returning code corresponding to the last move
+	Inherits from Game:
+		- players: tuple of the two players
+		- _name: name of the game
+		- whoPlays: number of the player who should play now (0 or 1)
+		- _waitingPlayer: Event used to wait for the players
+		- _lastMove, _last_return_code: string and returning code corresponding to the last move
+		- _logger: logger to use to log infos, debug, ...
 
-	Add some properties
-	- _theMap: Map object (only used to build the object or get initial data)
-	- _deck: the train cards deck (a Deck object, with all the methods to get cards, shuffle, etc.)
-	- _cards: cards[pl] is the list of cards of the player pl.
-	            _cards[pl][i] gives how many cards of colors i the player pl has
-	- _score, _nbWagons: a 2-element list with the score and number of wagons for each player
-	- _objectivesDeck: list of objectives cards in the deck (an objective card is 3-uplet city1;city2;points)
-	- _objectives: list of objectives of each player (a 2-element list)
+	Add some properties:
+		- _theMap: Map object (only used to build the object or get initial data)
+		- _deck: the train cards deck (a Deck object, with all the methods to get cards, shuffle, etc.)
+		- _cards: 
+			_cards[pl] is the list of cards of the player pl. 
+			_cards[pl][i] gives how many cards of colors i the player pl has
+		- _score, _nbWagons: a 2-element list with the score and number of wagons for each player
+		- _objectivesDeck: list of objectives cards in the deck (an objective card is 3-uplet city1;city2;points)
+		- _objectives: list of objectives of each player (a 2-element list)
 	"""
 
-	# create all the maps (each game will have a reference to its map)
-	maps = {m: Map(m) for m in ('USA', 'small', 'Europe')}
+	# Instanciate all the maps (each game will have a reference to its map)
+	maps = { m: Map(m) for m in MAPS }
 
 	def __init__(self, player1, player2, id, **options):
 		Game.__init__(self, player1, player2, id, **options)
 
 		"""
 		Create a game
-		:param player1: 1st Player
-		:param player2: 2nd Player
-		:param options: dictionary of options (the options 'seed' and 'timeout' are managed by the Game class)
+			:param player1: 1st Player
+			:param player2: 2nd Player
+			:param options: dictionary of options (the options 'seed' and 'timeout' are managed by the Game class)
 		"""
 
 		self.name = "Ticket to Ride"
 
-		# get the map
-		if 'map' not in options:
-			options['map'] = 'USA'
-		try:
-			self._theMap = self.maps[options['map']]
-		except KeyError:
-			raise ValueError(
-				"The option `map` is incorrect (%s instead of being in [%s])"
-				% (options['map'], list(self.maps.keys())))
-		self._mapTxt = self._theMap.rawtxt
+		# Get the mqp
+		self.getMap(options)
 
-		# initialize the deck and give 4 cards per player
-		self._deck = Deck()                 # deck of train cards
-		self._cards = [[0]*10, [0]*10]        # self._cards[pl][c] gives how many cards c the player pl has
-		for pl in range(2):
+		# Init game deck
+		self._deck = Deck() # Seck of train cards
+
+		# Init players deck
+		self._cards = [[0] * 10, [0] * 10] # self._cards[playerIndex][colorIndex] gives how many cards of the colors the player player has
+
+		# Distribute four first cards to each player
+		for player in range(2):
 			for _ in range(4):
-				self._cards[pl][self._deck.drawBlind()] += 1
+				self._cards[player][self._deck.drawBlind()] += 1
 
-		# score and wagons
+		# Init scores and wagons to store the score and the number of wagons for each player
 		self._score = [0, 0]
 		self._nbWagons = [self._theMap.nbWagons, self._theMap.nbWagons]
 
-		# objectives
-		self._objectivesDeck = self._theMap.objectives      # get a copy of the list of objectives
-		shuffle(self._objectivesDeck)
+		# Init the objectives deck
+		self._objectivesDeck = self._theMap.objectives # Get a copy of the list of objectives
+		random.shuffle(self._objectivesDeck)
+
+		# Init the objectives of each player
 		self._objectives = [[], []]
-		self._objDrawn = []     # list of drawn objectives (3 objectives kept between drawObjective and chooseObjective)
+		self._objDrawn = [] # List of drawn objectives (3 objectives kept between drawObjective and chooseObjective)
 
-		self._shouldTakeAnotherCard = False      # True if the player has taken a card and MUST take another one
-
-		# tracks
-		self._tracks = self._theMap.tracks      # get a copy of the tracks in a dictionary (city1, city2): Track
+		# Init the tracks dictionary
+		self._tracks = self._theMap.tracks # Get a copy of the tracks in a dictionary (city1, city2): Track
 		self._taken = []
 
-		# manage the 1st round
+		# Used for actions that takes two moves (drawCard x 2)
+		self._playerShouldPlayAgain = False # TODO replace _shouldTakeAnotherCard by _playerShouldPlayAgain
+		# self._shouldTakeAnotherCard = False # True if the player has taken a card and MUST take another one
+
+		# Variable to handle the first move and make sure to force the player to draw and choose objectives
 		self._firstMove = [True, False]
 
-		# manage the last round
-		self._lastRound = 3      # == 0 for the very last move
+		# manage the last round # TODO read again to understand usage
+		self._lastRound = 3 # == 0 for the very last move
 
-		# actions that happened on last move, will be sent to the web client
-		self._lastMoveWeb = {}
+		# Actions that happened on last move, will be sent to the web client
+		# self._lastMoveWeb = {} # TODO re-enable later
 
-		self.width = 0
-		self.height = 0
+		# Log the initial state of the game
+		self.logger.debug("Cards face up = " + " ".join(str(c) for c in self._deck.faceUp))
+		self.logger.debug("Four first cards of each player = " + str(self._cards))
 
-		self.logger.debug("FaceUp= " + " ".join(str(c) for c in self._deck.faceUp))
-		self.logger.debug("Init cards = " + str(self._cards))
+	def getMap(self, options):
+		# Default map is USA
+		if 'map' not in options: 
+			options['map'] = DEFAULT_MAP
 
-	def getBoard(self):
-		return self.getData(self.players[0]) # TODO do not set player
+		try:
+			self._theMap = self.maps[options['map']]
+		except KeyError:
+			raise ValueError("The option `map` is incorrect (%s is not in [%s])" % (options['map'], list(self.maps.keys())))
+		
+		self._mapTxt = self._theMap.rawtxt
+
+	# def getBoard(self):
+	# 	"""
+		
+	# 	"""
+
+	# 	# get the list of the cards
+	# 	pl = 0 if player == self.players[0] else 1     # index of the player
+	# 	cards = []
+	# 	for i, c in enumerate(self._cards[pl]):
+	# 		if c > 0:
+	# 			for _ in range(c):
+	# 				cards.append(str(i))
+
+	# 	# send the cities, the face-up cards and the player cards
+	# 	return self._theMap.data + " " + " ".join(str(c) for c in self._deck.faceUp) + " " + " ".join(cards)
 	
-	def getGameSettings(self):
+	# 	return self.getData(self.players[0])
+	
+	def getGameSettings(self, player):
 		"""
-		Returns the settings of the game
+			Returns the settings of the game
 		"""
-		# get the 4 cards (see https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists for the sum)
-		cards = sum([nb*[idx,] for idx, nb in enumerate(self._cards[0]) if nb>0],[])
+
+		# Get the player index
+		playerIndex = 0 if player == self.players[0] else 1
+
+		# Get the player cards (see https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists for the sum)
+		cards = sum([nb * [idx, ] for idx, nb in enumerate(self._cards[playerIndex]) if nb > 0], [])
+
 		return {
 			"nbCities": self._theMap.nbCities,
 			"nbTracks": self._theMap.nbTracks,
 			"trackData": " ".join([str(tr) for tr in self._theMap._tracks]),
-			"cities": "|".join([c.name for c in self._theMap._cities]),
-			"playerCards": " ".join(map(str, cards))	 # TODO: do not set 0 but the player
+			"cities": " ".join([c.name for c in self._theMap._cities]),
+			"playerCards": " ".join(map(str, cards))
 		}
 
+	# def HTMLrepr(self):
+	# 	"""Returns an HTML representation of your game"""
+	# 	# this, or something you want...
+	# 	return "<A href='/game/%s'>%s</A>" % (self.name, self.name)
 
+	# def getDictInformations(self, firstTime=False):
+	# 	"""
+	# 	Returns a dictionary for HTML display
+	# 	- firstTime is True when this is called for the 1st time by a websocket
+	# 	:return:
+	# 	"""
+	# 	data = {'players': [{
+	# 			"name": self.players[pl].name,
+	# 			"wagons": self._nbWagons[pl],
+	# 			"score": self._score[pl],
+	# 			"nbCards": sum(self._cards[pl]),
+	# 			"objectives": len(self._objectives[pl])
+	# 			} for pl in range(2)]
+	# 	}
+	# 	if firstTime:
+	# 		data["map_name"] = self._theMap.name
+	# 		data["map_image"] = self._theMap.imagePath
+	# 		# data["rectangles"] = [tr.imagePos for tr in self._tracks.values()]
+	# 		for pl in range(2):
+	# 			data["players"][pl]["tracks"] = [tr.imagePos for tr in self._taken if tr.isTakenBy(pl)]
+	# 		data["faceUp"] = self._deck.faceUp
 
-	def HTMLrepr(self):
-		"""Returns an HTML representation of your game"""
-		# this, or something you want...
-		return "<A href='/game/%s'>%s</A>" % (self.name, self.name)
+	# 	# add info from the last move
+	# 	data.update(self._lastMoveWeb)
 
-	def getDictInformations(self, firstTime=False):
-		"""
-		Returns a dictionary for HTML display
-		- firstTime is True when this is called for the 1st time by a websocket
-		:return:
-		"""
-		data = {'players': [{
-				"name": self.players[pl].name,
-				"wagons": self._nbWagons[pl],
-				"score": self._score[pl],
-				"nbCards": sum(self._cards[pl]),
-				"objectives": len(self._objectives[pl])
-				} for pl in range(2)]
-		}
-		if firstTime:
-			data["map_name"] = self._theMap.name
-			data["map_image"] = self._theMap.imagePath
-			# data["rectangles"] = [tr.imagePos for tr in self._tracks.values()]
-			for pl in range(2):
-				data["players"][pl]["tracks"] = [tr.imagePos for tr in self._taken if tr.isTakenBy(pl)]
-			data["faceUp"] = self._deck.faceUp
+	# 	# add comments
+	# 	data['comments'] = self._comments.getString(2, [p.name for p in self.players], html=True)
 
-		# add info from the last move
-		data.update(self._lastMoveWeb)
-
-		# add comments
-		data['comments'] = self._comments.getString(2, [p.name for p in self.players], html=True)
-
-		return data
-
-	def __str__(self):
-		"""
-		Convert a Game into string (to be send to clients, and display)
-		"""
-		# map lines
-		mapLines = ["".join(line) for line in self._mapTxt]
-
-		# score lines
-		scoreLines = [
-			"\t\tGame: " + self.name, '',
-			"\t\tCards: " + " ".join(strCards(c, c) for c in self._deck.faceUp),
-			'', ''
-		]
-		for i, pl in enumerate(self.players):
-			br = "[]" if self.whoPlays == i else "  "
-			scoreLines.append(
-				"\t\t" + br[0] + playerColors[i] + "Player " + str(i + 1) + ": " + pl.name + Style.RESET_ALL + br[1]
-			)
-			scoreLines.append(
-				"\t\t Score: %3d \t Wagons: %2d \t Objectives: %d" %
-				(self._score[i], self._nbWagons[i], len(self._objectives[i]))
-			)
-			if not isinstance(self.players[i], Bot) and isinstance(self.players[1-i], Bot):
-				scoreLines.append("\t\t Cards (%2d): " % sum(self._cards[i]))
-				for c, (name, color) in enumerate(zip(colorNames[1:], tracksColors[1:])):
-					scoreLines.append("\t\t\t - (%d) %10s:%s" % (c+1, name, strCards(c+1, self._cards[i][c+1])))
-			else:
-				scoreLines.append("\t\t Cards (%2d)" % sum(self._cards[i]))
-
-			scoreLines.append("")
-
-		# assembly
-		res = list(mapLines[:5])
-		res.extend([l1+l2 for l1, l2 in zip_longest(
-			mapLines[5:], scoreLines, fillvalue=' '*len(res[0]) if len(scoreLines) > len(mapLines) else ''
-		)])
-		return "\n".join(res)
-
+	# 	return data
 
 	def updateGame(self, move):
 		"""
@@ -274,9 +298,8 @@ class TicketToRide(Game):
 		if self._objDrawn and not chooseObjectives:
 			return LOSING_MOVE, "a `draw objectives` move must be followed by a `choose objectives` move"
 		# if the last move was drawCard and the card was not a Locomotive, then this move MUST be drawCard or drawBlindCard
-		if self._shouldTakeAnotherCard and not (drawCard or drawBlindCard):
-			return LOSING_MOVE, "a `draw card` or `draw blind card` must be followed by a `draw card` " \
-			                    "or `draw blind card` (except for Locomotive taken face up)"
+		if self._playerShouldPlayAgain and not chooseObjectives and not (drawCard or drawBlindCard):
+			return LOSING_MOVE, "a `draw card` or `draw blind card` must be followed by a `draw card` or `draw blind card` (except for Locomotive taken face up)"
 		# the 1st move MUST be chooseObjectives
 		if self._firstMove[self.whoPlays] and not drawObjectives:
 			return LOSING_MOVE, "The 1st move MUST be a `draw objective` move!"
@@ -303,7 +326,7 @@ class TicketToRide(Game):
 		self._firstMove[self.whoPlays] = False
 
 		# check the end of the game
-		if self._lastRound < 3 and not (self._shouldTakeAnotherCard or self._objDrawn):
+		if self._lastRound < 3 and not (self._playerShouldPlayAgain or self._objDrawn):
 			self._lastRound -= 1
 		if self._lastRound < 0:
 			# check how has won !
@@ -314,41 +337,38 @@ class TicketToRide(Game):
 	def getBoardState(self):
 		return " ".join(str(c) for c in self._deck.faceUp)
 
-	def getDataSize(self):
-		"""
-		Returns the size of the datas send by getData
-		(for example sizes of arrays, so that the arrays could be allocated before calling getData)
-		"""
-		# send the number of cities and the number of tracks
-		return "%d %d" % (self._theMap.nbCities, self._theMap.nbTracks)
+	# def getDataSize(self):
+	# 	"""
+	# 	Returns the size of the datas send by getData
+	# 	(for example sizes of arrays, so that the arrays could be allocated before calling getData)
+	# 	"""
+	# 	# send the number of cities and the number of tracks
+	# 	return "%d %d" % (self._theMap.nbCities, self._theMap.nbTracks)
 
+	# def getData(self, player):
+	# 	"""
+	# 	Return the datas of the game (when ask with the GET_GAME_DATA message) asked by player `player`
+	# 	ie the map data, the face up cards and the 4 initial cards (for each player)
+	# 	"""
+	# 	# get the list of the cards
+	# 	pl = 0 if player == self.players[0] else 1     # index of the player
+	# 	cards = []
+	# 	for i, c in enumerate(self._cards[pl]):
+	# 		if c > 0:
+	# 			for _ in range(c):
+	# 				cards.append(str(i))
 
+	# 	# send the cities, the face-up cards and the player cards
+	# 	return self._theMap.data + " " + " ".join(str(c) for c in self._deck.faceUp) + " " + " ".join(cards)
 
-	def getData(self, player):
-		"""
-		Return the datas of the game (when ask with the GET_GAME_DATA message) asked by player `player`
-		ie the map data, the face up cards and the 4 initial cards (for each player)
-		"""
-		# get the list of the cards
-		pl = 0 if player == self.players[0] else 1     # index of the player
-		cards = []
-		for i, c in enumerate(self._cards[pl]):
-			if c > 0:
-				for _ in range(c):
-					cards.append(str(i))
+	# def getNextPlayer(self):
+	# 	"""
+	# 	Change the player who plays
 
-		# send the cities, the face-up cards and the player cards
-		return self._theMap.data + " " + " ".join(str(c) for c in self._deck.faceUp) + " " + " ".join(cards)
-
-
-	def getNextPlayer(self):
-		"""
-		Change the player who plays
-
-		Returns the next player (but do not update self.whoPlays)
-		"""
-		# in case of `draw objective` move, the player replay
-		return self.whoPlays if (self._shouldTakeAnotherCard or self._objDrawn) else 1 - self.whoPlays
+	# 	Returns the next player (but do not update self.whoPlays)
+	# 	"""
+	# 	# in case of `draw objective` move, the player replay
+	# 	return self.whoPlays if (self._playerShouldPlayAgain or self._objDrawn) else 1 - self.whoPlays
 
 	def faceUpCards(self):
 		"""Return the list of face up cards (for the bots)"""
@@ -431,16 +451,13 @@ class TicketToRide(Game):
 					else:
 						# flip a coin
 						msg.append("Same number of wagon cards")
-						winner = choice([0, 1])
+						winner = random.choice([0, 1])
 						if winner == self.whoPlays:
 							msg.append("Coin tossing: %s wins" % self.players[self.whoPlays].name)
 							return WINNING_MOVE, "\n".join(msg)
 						else:
 							msg.append("Coin tossing: %s wins" % self.players[1-self.whoPlays].name)
 							return LOSING_MOVE, "\n".join(msg)
-
-
-
 
 	def _chooseObjectives(self, move):
 		"""play a `choose objectives` move
@@ -466,9 +483,12 @@ class TicketToRide(Game):
 		self._lastMoveWeb = {
 			'move': 'Player %s take a %d objective cards' % (self.players[self.whoPlays].name, len([o for o in objs if o]))
 		}
-		# returns the number of chosen objectives
-		return NORMAL_MOVE, str(len([o for o in objs if o]))
 
+		self._playerShouldPlayAgain = False
+
+		# returns the number of chosen objectives
+		print("Choose objective answer, objs: ", objs)
+		return NORMAL_MOVE, str(len([o for o in objs if o]))
 
 	def _drawObjectives(self):
 		"""play a `draw objective` move
@@ -479,10 +499,12 @@ class TicketToRide(Game):
 				return LOSING_MOVE, "No more available objective cards !!"
 			else:
 				return WINNING_MOVE, "No more available objective cards !!"
+			
+		self._playerShouldPlayAgain = True
+			
 		# get the 3 objective cards
 		self._objDrawn = [self._objectivesDeck.pop() for _ in range(3)]
 		return NORMAL_MOVE, " ".join(str(c) for c in self._objDrawn)
-
 
 	def _drawCard(self, move):
 		"""play a `draw Card` move
@@ -502,13 +524,13 @@ class TicketToRide(Game):
 			return (LOSING_MOVE if sum(self._cards[self.whoPlays]) >= sum(
 				self._cards[1 - self.whoPlays]) else WINNING_MOVE), "No more cards in the deck !!"
 		# check if the player can take a Locomotive
-		if self._shouldTakeAnotherCard and card == MULTICOLOR:
+		if self._playerShouldPlayAgain and card == MULTICOLOR:
 			return LOSING_MOVE, "You cannot take a Locomotive as 2nd drawn card"
 		# add it in the hand
 		self._cards[self.whoPlays][card] += 1
 		# if it's not a Locomotive, the player MUST take another one
 		if card != MULTICOLOR:
-			self._shouldTakeAnotherCard = not self._shouldTakeAnotherCard
+			self._playerShouldPlayAgain = not self._playerShouldPlayAgain
 		deck = " ".join(str(c) for c in self._deck.faceUp)
 		# message for web client
 		self._lastMoveWeb = {
@@ -519,7 +541,6 @@ class TicketToRide(Game):
 		# - to the player: the deck
 		# - to the opponent: if the player replay, the card taken and the deck
 		return NORMAL_MOVE, deck
-
 
 	def _drawBlindCard(self):
 		"""Play a `draw blind card` move
@@ -534,14 +555,13 @@ class TicketToRide(Game):
 				return LOSING_MOVE,  "No more cards in the deck !!"
 			else:
 				return WINNING_MOVE, "No more cards in the deck !!"
-		self._shouldTakeAnotherCard = not self._shouldTakeAnotherCard  # need/no need to take another card
+		self._playerShouldPlayAgain = not self._playerShouldPlayAgain  # need/no need to take another card
 		# message for web client
 		self._lastMoveWeb = {'move': 'Player %s take a blind card' % self.players[self.whoPlays].name}
 		# send:
 		# - to the player: card drawn
 		# - to the opponent: if the player replay
 		return NORMAL_MOVE, str(draw)
-
 
 	def _claimRoute(self, move):
 		"""play a `claim a route` move
@@ -602,3 +622,42 @@ class TicketToRide(Game):
 
 		# normal move
 		return NORMAL_MOVE, ""
+	
+
+	def __str__(self):
+		"""
+		Convert a Game into string (to be send to clients, and display)
+		"""
+		# map lines
+		mapLines = ["".join(line) for line in self._mapTxt]
+
+		# score lines
+		scoreLines = [
+			"\t\tGame: " + self.name, '',
+			"\t\tCards: " + " ".join(strCards(c, c) for c in self._deck.faceUp),
+			'', ''
+		]
+		for i, pl in enumerate(self.players):
+			br = "[]" if self.whoPlays == i else "  "
+			scoreLines.append(
+				"\t\t" + br[0] + playerColors[i] + "Player " + str(i + 1) + ": " + pl.name + Style.RESET_ALL + br[1]
+			)
+			scoreLines.append(
+				"\t\t Score: %3d \t Wagons: %2d \t Objectives: %d" %
+				(self._score[i], self._nbWagons[i], len(self._objectives[i]))
+			)
+			if not isinstance(self.players[i], Bot) and isinstance(self.players[1-i], Bot):
+				scoreLines.append("\t\t Cards (%2d): " % sum(self._cards[i]))
+				for c, (name, color) in enumerate(zip(colorNames[1:], tracksColors[1:])):
+					scoreLines.append("\t\t\t - (%d) %10s:%s" % (c+1, name, strCards(c+1, self._cards[i][c+1])))
+			else:
+				scoreLines.append("\t\t Cards (%2d)" % sum(self._cards[i]))
+
+			scoreLines.append("")
+
+		# assembly
+		res = list(mapLines[:5])
+		res.extend([l1+l2 for l1, l2 in zip_longest(
+			mapLines[5:], scoreLines, fillvalue=' '*len(res[0]) if len(scoreLines) > len(mapLines) else ''
+		)])
+		return "\n".join(res)

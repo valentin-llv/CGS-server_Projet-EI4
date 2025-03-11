@@ -2,14 +2,14 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "../../../client/src/gameHeaders/ticketToRide.h"
+#include "../../../client/src/ticketToRide.h"
 
 extern int debug = 1;
 
 int main() {
     // cgs.valentin-lelievre.com
-    int result = connectToCGS("192.168.164.191", 15001);
-    // int result = connectToCGS("cgs.valentin-lelievre.com", 15001);
+    int result = connectToCGS("192.168.1.122", 15001);
+    // result = connectToCGS("cgs.valentin-lelievre.com", 15001);
 
     if(!result) return 1;
 
@@ -22,11 +22,16 @@ int main() {
         gameSettings.gameType = TRAINING;
         gameSettings.botId = RANDOM_PLAYER;
         gameSettings.timeout = 15;
-        gameSettings.starter = 2;
+        gameSettings.starter = 1;
         gameSettings.seed = 0;
         gameSettings.reconnect = 0;
 
+        printf("Envoi des paramètres de la partie\n");
+
         GameData gameData = GameDataDefaults;
+
+        printf("En attente de la réponse du serveur\n");
+
         int result = sendGameSettings(gameSettings, &gameData);
 
         printf("Game name: %s\n", gameData.gameName);
@@ -38,6 +43,14 @@ int main() {
         }
 
         int whoPlays = gameData.starter;
+
+        BoardState boardState;
+        int resBoardSate = getBoardState(&boardState);
+
+        // Print card colors
+        printf("Visible cards: ");
+        for(int i = 0; i < 5; i++) printf("%d ", boardState.card[i]);
+        printf("\n");
 
         while(1) {
             if(whoPlays == 1) {
@@ -104,20 +117,20 @@ int main() {
                         // No additional data needed
                         break;
                     case DRAW_CARD:
-                        moveData.drawCard.card = (CardColor)(rand() % 5);
+                        moveData.drawCard = (CardColor)(rand() % 5);
 
-                        printf("Draw card %d\n", moveData.drawCard.card);
+                        printf("Draw card %d\n", moveData.drawCard);
 
                         break;
                     case DRAW_OBJECTIVES:
                         // No additional data needed
                         break;
                     case CHOOSE_OBJECTIVES:
-                        moveData.chooseObjectve.selectCard[0] = rand() % 2;
-                        moveData.chooseObjectve.selectCard[1] = rand() % 2;
-                        moveData.chooseObjectve.selectCard[2] = rand() % 2;
+                        moveData.chooseObjectives[0] = rand() % 2;
+                        moveData.chooseObjectives[1] = rand() % 2;
+                        moveData.chooseObjectives[2] = rand() % 2;
 
-                        printf("Choose objectives %d %d %d\n", moveData.chooseObjectve.selectCard[0], moveData.chooseObjectve.selectCard[1], moveData.chooseObjectve.selectCard[2]);
+                        printf("Choose objectives %d %d %d\n", moveData.chooseObjectives[0], moveData.chooseObjectives[1], moveData.chooseObjectives[2]);
 
                         break;
                     default:
@@ -142,11 +155,11 @@ int main() {
                 if(moveData.action == DRAW_OBJECTIVES) {
                     moveData.action = CHOOSE_OBJECTIVES;
 
-                    moveData.chooseObjectve.selectCard[0] = rand() % 2;
-                    moveData.chooseObjectve.selectCard[1] = rand() % 2;
-                    moveData.chooseObjectve.selectCard[2] = rand() % 2;
+                    moveData.chooseObjectives[0] = rand() % 2;
+                    moveData.chooseObjectives[1] = rand() % 2;
+                    moveData.chooseObjectives[2] = rand() % 2;
 
-                    printf("Choose objectives %d %d %d\n", moveData.chooseObjectve.selectCard[0], moveData.chooseObjectve.selectCard[1], moveData.chooseObjectve.selectCard[2]);
+                    printf("Choose objectives %d %d %d\n", moveData.chooseObjectives[0], moveData.chooseObjectives[1], moveData.chooseObjectives[2]);
 
                     MoveResult moveResult;
                     if(sendMove(&moveData, &moveResult) != ALL_GOOD) break;
@@ -185,7 +198,11 @@ int main() {
         // free(gameData.boardData);
 
         printf("La partie est finie, le joueur quitte la partie\n");
-        if(!quitGame()) return 1;
+
+        quitGame();
+        return 1;
+
+        // if(!quitGame()) return 1;
     }
 
     return 0;

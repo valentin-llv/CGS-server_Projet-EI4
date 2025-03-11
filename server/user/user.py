@@ -5,6 +5,8 @@ from user.exceptions import *
 from gamesManager.gamesManager import GamesManager
 from gamesManager.exceptions import PlayerReconnectFailed
 
+from game.game import Game
+
 from player.player import Player
 
 from utils.pollableQueue import PollableQueue
@@ -28,6 +30,7 @@ class User(Player, threading.Thread):
 		# Init parent class Player
 		Player.__init__(self)
 
+		# Init itself as a thread
 		threading.Thread.__init__(self)
 		self.setDaemon(True)
 
@@ -36,26 +39,37 @@ class User(Player, threading.Thread):
 		self.id = User.uidsCounter
 		User.uidsCounter += 1
 
+		# Set a ref to the logger
 		self.logger = logging.getLogger()
+
+		# Create a queue to handle events and thread synchronization
 		self.queue = PollableQueue()
 	
 		# Store ref to socket and self communication manager
 		self.socket: SocketType = socket
 		self.socket.setblocking(False)
 
+		# Setup user state machine
 		self.state = StateMachine.WAIT_FOR_NAME
 
+		# User name and game ref
 		self.name = None
-		self.game = None
+		self.game: Game = None
 
+		# Reconnection status vatriable
 		self.waitingToReconnect = False
 
+	"""
+	
+		User thread start here
+	
+	"""
 	def run(self):
 		self.logger.message(f"User {self.id} has been connected, entering user loop")
 
 		try: self.loop()
 		except SocketClosedException: # Handle user disconnection
-			self.logger.message(f"User {self.name} has been disconnected")
+			self.logger.message(f"User: {self.id}, named: {self.name}, has been disconnected")
 
 			# If user is in a game, notify the game that the player has been disconnected, he will have x seconds to reconnect
 			if self.game:
@@ -78,8 +92,7 @@ class User(Player, threading.Thread):
 						try: nextMsgLength = self.readFirstBlock()
 						except FirstSocketMessageIsNotInt or MessageTooLong: continue
 					else: # Get message from user
-						try:
-							self.handleMessage(self.readMessage(nextMsgLength))
+						try: self.handleMessage(self.readMessage(nextMsgLength))
 						except MessageNotInJsonFormat: continue
 
 						nextMsgLength = None
@@ -117,20 +130,6 @@ class User(Player, threading.Thread):
 		self.logger.debug(f"User {self.name} sent message: {message}")
 		return message
 	
-	def handleMessage(self, message):
-		try: message = json.loads(message)
-		except json.decoder.JSONDecodeError: raise MessageNotInJsonFormat(self.sendMsg, self.name)
-
-		try:
-			match self.state:
-				case StateMachine.WAIT_FOR_NAME: self.getName(message)
-				case StateMachine.WAIT_FOR_GAME_SETTINGS: self.getGameSettings(message)
-				case StateMachine.PLAYING_GAME: self.userPlay(message)
-		except MessageDoesNotContainName: pass
-		except UsernameAlreadyTaken: pass
-		except UserDidNotSendGameSettings or InvalidGameSettings: pass
-		except UserSentInvalidInstruction or UserSentWrongActionDuringHisTurn or UserSentInvalidMove or UserSentWrongActionDuringOpponentTurn: pass
-
 	def sendMsg(self, message: dict):
 		try: jsonMessage = json.dumps(message)
 		except Exception: raise InvalidMessageFormat()
@@ -144,36 +143,125 @@ class User(Player, threading.Thread):
 			self.socket.send(firstBlock)
 			self.socket.send(secondBlock)
 		except ConnectionResetError: raise SocketClosedException()
+	
+	def handleMessage(self, message):
+		try: message = json.loads(message)
+		except json.decoder.JSONDecodeError: raise MessageNotInJsonFormat(self.sendMsg, self.name)
+
+		try:
+			match self.state:
+				case StateMachine.WAIT_FOR_NAME: self.getName(message)
+				case StateMachine.WAIT_FOR_GAME_SETTINGS: self.getGameSettings(message)
+				case StateMachine.PLAYING_GAME: self.userPlay(message)
+		except MessageDoesNotContainName: pass
+		except UsernameAlreadyTaken: pass
+		except UserDidNotSendGameSettings: pass
+		except UserSentInvalidInstruction or UserSentWrongActionDuringHisTurn or UserSentInvalidMove or UserSentWrongActionDuringOpponentTurn: pass
+	
+	def getName(self, message):
+		# State 0: Waiting for user name
+		if not "name" in message or not message["name"]: raise MessageDoesNotContainName(self.sendMsg, self.name)
+		
+		# Check if username is already taken
+		user: User
+		for user in User.users:
+			if user.name == message["name"] and user.waitingToReconnect == False: 
+				raise UsernameAlreadyTaken(self.sendMsg, self.name)
+
+		self.name = message["name"]
+		self.state = StateMachine.WAIT_FOR_GAME_SETTINGS
+
+		self.logger.debug(f"User {self.name} has been registered")
+		self.sendMsg({ "state": 1 }) # Send confirmation message, state = 1 => OK
+
+	def getGameSettings(self, gameSettings):
+		# State 1: Waiting for game settings
+		if not "gameType" in gameSettings: raise UserDidNotSendGameSettings(self.sendMsg, self.name)
+
+		# If player already in a game, remove him from the game
+		# if self.game: self.game.playerQuitGame(self)
+		if self.game: self.game.event("playerQuitGame", { "player": self })
+
+		GamesManager.event("registerPlayer", { "user": self, "gameSettings": gameSettings })
+
+	def userPlay(self, actionData):
+		# State 2: User is playing, send move, get move, display game, quit game ...
+		if not "action" in actionData: raise UserSentInvalidInstruction(self.sendMsg, self.name)
+
+		match actionData["action"]:
+			case "getMove": # User ask for latest opponent move
+				# Check if it's user turn, if it is this action is not available
+				if self.game.players[self.game.whoPlays] == self: raise UserSentWrongActionDuringHisTurn(self.sendMsg, self.name)
+
+				self.game.event("getMove", { "player": self, "actionData": actionData })
+
+			case "sendMove": # User send move to the game
+				if not "move" in actionData and not actionData["move"]: raise UserSentInvalidMove(self.sendMsg, self.name)
+				
+				# Check if it's user turn, if it is not this action is not available
+				if self.game.players[self.game.whoPlays] != self: raise UserSentWrongActionDuringOpponentTurn(self.sendMsg, self.name)
+				
+				# Send move to the game
+				self.game.event("sendMove", { "player": self, "actionData": actionData })
+
+			case "sendMessage": # User send message to the opponent # TODO
+				pass
+
+			case "getBoardState": # Get the current board state
+				self.sendMsg({
+					"state": 1, 
+					"cards": self.game.getBoardState(),
+				})
+
+			case "displayGame": # Get the game as a string and send it the user
+				board = str(self.game).encode()
+				self.sendMsg({ "state": 1, "boardSize": len(board) })
+
+				# Do not use sendMsg, python json parser does not support hex escape sequences (ex: \xe2\x94\x8f\xe2\x94\x81 for ┏━)
+				try: self.socket.send(board)
+				except ConnectionResetError: raise SocketClosedException()
+
+			case "quitGame":
+				if self.game:
+					# Inform the game that the player left
+					self.game.event("playerQuitGame", { "player": self })
+					
+					# Reset game ref
+					self.game = None
+				
+				self.sendMsg({ "state": 1 })
+
+				self.state = StateMachine.WAIT_FOR_GAME_SETTINGS
+		
+			case _:
+				self.logger.debug(f"User {self.name} send invalid instruction")
+				self.sendMsg({ "state": 0, "reason": "Invalid instruction" })
 
 	def handleEvent(self, event, data):
 		if event == "joinedGame":
 			self.game = data["game"]
 
 			# board = self.game.getBoard()
-			gameSettings = self.game.getGameSettings()
+			gameSettings = self.game.getGameSettings(self)
 			self.sendMsg({
 				"state": 1, # OK
 				"gameName": "Game " + str(self.game.id),
 				"gameSeed": self.game.seed,
 				"starter": 2 if self.game.players[self.game.whoPlays] == self else 1,
-				# "boardWidth": self.game.width,
-				# "boardHeight": self.game.height,
-				# "nbElements": len(board),
-				# "boardData": board,
 			} | gameSettings)
 
 			self.state = StateMachine.PLAYING_GAME
 
 		# Game events
 		elif event == "getMoveResponse":
-			# TODO: update to support dict
+			# TODO: ------> !important update to better format json response with strings (as used by other well implemented response such as game settings response)
 
-			# print(f"Game sent {data}")
+			print(f"Game sent {data}")
 
 			move = data["move"][0]
 
 			# TODO: opponenet message
-			dict = { "state": 1, "move": move, "returnCode": data["returnCode"], "op_message": data["message"], "message": data["message"] }
+			dict = { "state": 1, "move": move, "returnCode": data["returnCode"], "op_message": "", "message": data["message"] }
 
 			# Fill with opponent move infos
 			if int(move) == 1:
@@ -189,6 +277,8 @@ class User(Player, threading.Thread):
 				dict["objective1"] = data["move"][2]
 				dict["objective2"] = data["move"][4]
 				dict["objective3"] = data["move"][6]
+
+				dict["message"] = "drawObjectives"
 
 			# TODO: add opponent move result infos
 
@@ -218,23 +308,6 @@ class User(Player, threading.Thread):
 				dict["to3"] = ints[7]
 				dict["score3"] = ints[8]
 
-			# print(f"Sending {dict}")
-
-			self.sendMsg(dict)
-
-		elif event == "getBoardStateResponse":
-			# TODO: update to support dict
-
-			dict = { "state": 1 }
-
-			print(f"Board state: {data['boardState']}")
-
-			ints = [int(s) for s in data["boardState"].split() if s.isdigit()]
-
-			print(f"Ints: {ints}")
-
-			for i in range(0, len(ints)): dict["card" + str(i)] = ints[i]
-
 			print(f"Sending {dict}")
 
 			self.sendMsg(dict)
@@ -247,77 +320,6 @@ class User(Player, threading.Thread):
 
 		# Default
 		else: self.logger.debug(f"User {self.name} received unknown event {event}")
-	
-	def getName(self, message):
-		# State 0: Waiting for user name
-		if not "name" in message or not message["name"]: raise MessageDoesNotContainName(self.sendMsg, self.name)
-		
-		# Check if username is already taken
-		for user in User.users:
-			if user.name == message["name"] and user.waitingToReconnect == False: 
-				raise UsernameAlreadyTaken(self.sendMsg, self.name)
-
-		self.name = message["name"]
-		self.state = StateMachine.WAIT_FOR_GAME_SETTINGS
-
-		self.logger.debug(f"User {self.name} has been registered")
-		self.sendMsg({ "state": 1 }) # Send confirmation message, state = 1 => OK
-
-	def getGameSettings(self, gameSettings):
-		# State 1: Waiting for game settings
-		if not "gameType" in gameSettings: raise UserDidNotSendGameSettings(self.sendMsg, self.name)
-
-		# If player already in a game, remove him from the game
-		# if self.game: self.game.playerQuitGame(self) # TODO
-
-		GamesManager.event("registerPlayer", { "user": self, "gameSettings": gameSettings })
-
-	def userPlay(self, actionData):
-		# State 2: User is playing, send move, get move, display game, quit game ...
-		if not "action" in actionData: raise UserSentInvalidInstruction(self.sendMsg, self.name)
-
-		match actionData["action"]:
-			case "getMove": # User ask for latest opponent move
-				# Check if it's user turn, if it is this action is not available
-				if self.game.players[self.game.whoPlays] == self: raise UserSentWrongActionDuringHisTurn(self.sendMsg, self.name)
-
-				self.game.event("getMove", { "player": self, "actionData": actionData })
-
-			case "sendMove": # User send move to the game
-				if not "move" in actionData and not actionData["move"]: raise UserSentInvalidMove(self.sendMsg, self.name)
-				
-				# Check if it's user turn, if it is not this action is not available
-				if self.game.players[self.game.whoPlays] != self: raise UserSentWrongActionDuringOpponentTurn(self.sendMsg, self.name)
-				
-				# Send move to the game
-				self.game.event("sendMove", { "player": self, "actionData": actionData })
-
-			case "sendComment": # User send comment to the game
-				# TODO
-				pass
-
-			case "getBoardState":
-				self.game.event("getBoardState", { "player": self })
-
-			case "displayGame":
-				board = str(self.game).encode()
-				self.sendMsg({ "state": 1, "boardSize": len(board) })
-
-				# Do not use sendMsg, json parser does not support hex escape sequences (ex: \xe2\x94\x8f\xe2\x94\x81 for ┏━)
-				try: self.socket.send(board)
-				except ConnectionResetError: raise SocketClosedException()
-
-			case "quitGame":
-				if self.game: 
-					# self.game.playerQuitGame(self) # TODO
-					self.game = None
-				self.sendMsg({ "state": 1 })
-
-				self.state = StateMachine.WAIT_FOR_GAME_SETTINGS
-		
-			case _:
-				self.logger.debug(f"User {self.name} send invalid instruction")
-				self.sendMsg({ "state": 0, "reason": "Invalid instruction" }) # INVALID_INSTRUCTION
 
 	def event(self, event: str, data: dict):
 		self.queue.put((event, data))

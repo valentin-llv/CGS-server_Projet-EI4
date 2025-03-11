@@ -17,6 +17,7 @@ from game.constants import DEFAULT_DIFFICULTY, TURN_TIMEOUT_DEFAULT
 
 class Game(threading.Thread):
     def __init__(self, player1: Player, player2: Player, id: int, **options):
+        # Register itself as a thread
         threading.Thread.__init__(self)
         self.setDaemon(True)
 
@@ -27,17 +28,14 @@ class Game(threading.Thread):
 
         self.players = [player1, player2]
 
-        self.checkOptions(options)
+        self.saveGameSettings(options)
 
         self.queue = Queue()
         self.logger = logging.getLogger()
 
         self.timers = []
 
-        # TODO : This should not be here
-        self.alternate = False
-
-    def checkOptions(self, options):
+    def saveGameSettings(self, options):
         if "start" in options and options["start"] != None: self.whoPlays = options["start"]
         else: self.whoPlays = random.randrange(2)
 
@@ -51,80 +49,64 @@ class Game(threading.Thread):
         while True:
             event, data = self.queue.get()
 
-            if event == "getMove" or event == "sendMove" or event == "sendComment":
+            if event == "getMove" or event == "sendMove" or event == "sendMessageToOpponent":
+                # Ifthe game is currently running
                 if self.active:
                     if event == "getMove": self.getMove(data["player"])
                     elif event == "sendMove": self.sendMove(data["player"], data)
-                    elif event == "sendComment": self.sendComment(data["player"], data["comment"]) # TODO
+                    elif event == "sendMessageToOpponent": self.sendMessageToOpponent(data["player"], data) # TODO
+                # Else the game is over, tell the player that the game ended
                 else: data["player"].event("gameEnded", { "winner": self.winner })
-            elif event == "getBoardState": self.getBoardStateAction(data["player"])
             elif event == "playerDisconnected": self.playerDisconnected(data["player"])
             elif event == "reconnectPlayer": self.reconnectPlayer(data["player"], data["index"])
             elif event == "playerQuitGame": self.playerQuitGame(data["player"])
             else: self.logger.error(f"Unknown event {event}")
 
     def getMove(self, player):
+        # TODO this currently only support playing against a bot
+
         # If player is a bot, force him to play a move
-        if isinstance(self.players[self.whoPlays], Bot):
-            print("Bot playing move")
+        if isinstance(self.players[self.whoPlays], Bot):        
+            returnCode, message, move = self.makeBotPlayMove()
 
-            move: str = self.players[self.whoPlays].playMove()
-
-            print(f"Bot played move {move}")
-
-            result = self.updateGame(move)
-
-            print(f"Result: {result}")
-
-            if int(move[0]) == 4:
-                print("Bot played move 4, bot replaying")
-
-                move: str = self.players[self.whoPlays].playMove()
-
-                print(f"Bot played move {move}")
-
-                result = self.updateGame(move)
-            elif int(move[0]) == 3:
-                print("Bot played move 3, bot replaying")
-
-                move: str = self.players[self.whoPlays].playMove()
-
-                print(f"Bot played move {move}")
-
-                result = self.updateGame(move)
-            elif int(move[0]) == 2:
-                print("Bot played move 2, bot replaying")
-
-                move: str = self.players[self.whoPlays].playMove()
-
-                print(f"Bot played move {move}")
-
-                result = self.updateGame(move)
-
-            returnCode, message = result
-
-            player.event("getMoveResponse", { "returnCode": returnCode, "message": message, "move": move })
+            self.logger.debug(f"Bot move result code: {returnCode}, message: {message}, move: {move}")
 
             if returnCode == LOSING_MOVE: # Game ended, bot lost
                 self.active = False
                 self.winner = self.players[1] if self.whoPlays == 0 else self.players[0]
+            else:
+                self.nextPlayerTurn()
 
-            self.nextPlayerTurn()
+            player.event("getMoveResponse", { "returnCode": returnCode, "message": message, "move": move })
         else:
-            # TODO Real player
+            # TODO implement if opponenet is a real playereal player
             pass
 
+    def makeBotPlayMove(self):
+        self.logger.debug("Bot playing move")
+
+        # Get the bot move
+        move: str = self.players[self.whoPlays].playMove()
+
+        # Send the move to the game
+        result = self.updateGame(move)
+
+        # Check if bot should play again
+        if self._playerShouldPlayAgain == True:
+            move = self.players[self.whoPlays].playMove()
+            result = self.updateGame(move)
+
+        returnCode, message = result
+        return returnCode, message, move
+
     def sendMove(self, player, moveData):
-        # Print moveData move
-        print(f"Player {player.name} sent move {moveData}")
+        # Log player move data
+        self.logger.debug(f"Player {player.id}, named: {player.name}, sent move data: {moveData}")
 
-        # Convert moveData to string
-        # move = " ".join([str(moveData[x]) for x in moveData])
-
+        # Temporary code to format the move data to support TicketToRide updateGame(moveString) parameter # TODO remove this
         move = moveData["actionData"]["move"]
 
         moveString = str(move)
-
         if int(move) == 5:
             moveString += " " + str(moveData["actionData"]["selectCard"][0]) + " " + str(moveData["actionData"]["selectCard"][1]) + " " + str(moveData["actionData"]["selectCard"][2])
         if int(move) == 1:
@@ -132,25 +114,32 @@ class Game(threading.Thread):
         if int(move) == 3:
             moveString += " " + str(moveData["actionData"]["card"])
 
-        print(f"Formatted move string: {moveString}")
+        # Log the formatted move string
+        self.logger.debug(f"Formatted move string: {moveString}")
 
         returnCode, message = self.updateGame(moveString)
-        player.event("sendMoveResponse", { "returnCode": returnCode, "message": message, "move": moveString })
 
-        if int(str(move)) == 3 or int(str(move)) == 2:
-            if self.alternate == True:
-                self.nextPlayerTurn()
-                self.alternate = False
-            else:
-                self.alternate = True
-        elif int(str(move)) != 4:
-            self.nextPlayerTurn()
+        # Log the result of the move
+        self.logger.debug(f"Move result code: {returnCode}, message: {message}")
+
+        # TODO remove is update nextPlayerTurn is working
+        # if int(str(move)) == 3 or int(str(move)) == 2:
+        #     if self.alternate == True:
+        #         self.nextPlayerTurn()
+        #         self.alternate = False
+        #     else:
+        #         self.alternate = True
+        # elif int(str(move)) != 4:
+        #     self.nextPlayerTurn()
 
         if returnCode == LOSING_MOVE: # Game ended, player lost
             self.active = False
             self.winner = self.players[1] if self.players[0].id == player.id else self.players[0]
+        else: self.nextPlayerTurn()
 
-    def sendComment(self, player, comment):
+        player.event("sendMoveResponse", { "returnCode": returnCode, "message": message, "move": moveString })
+
+    def sendMessageToOpponent(self, player, comment):
         """ TODO
 			Called when a player send a comment
 		Parameters:
@@ -169,13 +158,12 @@ class Game(threading.Thread):
 
         pass
 
-    def getBoardStateAction(self, player):
-        boardState = self.getBoardState()
-
-        player.event("getBoardStateResponse", { "boardState": boardState })
-
     def nextPlayerTurn(self):
-        self.whoPlays = 1 if self.whoPlays == 0 else 0
+        if self._playerShouldPlayAgain == False:
+            self.whoPlays = 1 if self.whoPlays == 0 else 0
+        else:
+            # Log that the player play again
+            self.logger.debug(f"Player {self.players[self.whoPlays].name} play again")
 
     def playerQuitGame(self, player):
         self.active = False

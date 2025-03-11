@@ -6,5 +6,10 @@
         "stdio.h": "c",
         "stdlib.h": "c",
         "api.h": "c"
-    }
+    },
+
+    // Hide __pycache__ folders
+    "files.exclude": {
+        "**/__pycache__": true
+    },
 }
