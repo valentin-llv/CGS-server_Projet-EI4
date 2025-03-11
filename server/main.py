@@ -1,4 +1,5 @@
-import threading, logging
+import threading, logging, os
+from dotenv import load_dotenv 
 
 from argParser.argParser import parseCmdArgs, executeArgs, updateGlobalVars
 
@@ -98,4 +99,12 @@ def loop():
 		pass
 
 if __name__ == "__main__":
-	main()
+	# Loading variables from .env file
+	load_dotenv() 
+
+	if os.getenv('ENV') == "PROD":
+		import daemon
+		
+		with daemon.DaemonContext():
+			main()
+	else: main()

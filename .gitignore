@@ -6,3 +6,5 @@ logs
 **/**/*.o
 
 **/**/valgrind-out.txt
+
+.env
