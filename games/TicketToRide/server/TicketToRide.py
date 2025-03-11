@@ -216,7 +216,7 @@ class TicketToRide(Game):
 			"nbCities": self._theMap.nbCities,
 			"nbTracks": self._theMap.nbTracks,
 			"trackData": " ".join([str(tr) for tr in self._theMap._tracks]),
-			"cities": " ".join([c.name for c in self._theMap._cities]),
+			"cities": "|".join([c.name for c in self._theMap._cities]),
 			"playerCards": " ".join(map(str, cards))
 		}
 

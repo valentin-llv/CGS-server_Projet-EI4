@@ -8,12 +8,13 @@ extern int debug = 1;
 
 int main() {
     // cgs.valentin-lelievre.com
-    int result = connectToCGS("192.168.1.122", 15001);
-    // int result = connectToCGS("cgs.valentin-lelievre.com", 15001);
+    // int result = connectToCGS("192.168.1.122", 15001);
+    // int result = connectToCGS("192.168.164.191", 15001);
+    int result = connectToCGS("cgs.valentin-lelievre.com", 15001);
 
     if(!result) return 1;
 
-    if(!sendName("other")) return 1;
+    if(!sendName("test")) return 1;
 
     while(1) {
         printf("Création d'une nouvelle partie\n");
