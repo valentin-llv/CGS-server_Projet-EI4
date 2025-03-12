@@ -66,7 +66,7 @@ class Game(threading.Thread):
         # TODO this currently only support playing against a bot
 
         # If player is a bot, force him to play a move
-        if isinstance(self.players[self.whoPlays], Bot):        
+        if isinstance(self.players[self.whoPlays], Bot):
             returnCode, message, move = self.makeBotPlayMove()
 
             self.logger.debug(f"Bot move result code: {returnCode}, message: {message}, move: {move}")
@@ -90,11 +90,6 @@ class Game(threading.Thread):
 
         # Send the move to the game
         result = self.updateGame(move)
-
-        # Check if bot should play again
-        if self._playerShouldPlayAgain == True:
-            move = self.players[self.whoPlays].playMove()
-            result = self.updateGame(move)
 
         returnCode, message = result
         return returnCode, message, move
