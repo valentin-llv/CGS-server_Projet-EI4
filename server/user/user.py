@@ -152,11 +152,16 @@ class User(Player, threading.Thread):
 			match self.state:
 				case StateMachine.WAIT_FOR_NAME: self.getName(message)
 				case StateMachine.WAIT_FOR_GAME_SETTINGS: self.getGameSettings(message)
-				case StateMachine.PLAYING_GAME: self.userPlay(message)
+				case StateMachine.PLAYING_GAME:
+					try: self.userPlay(message)
+					except SocketClosedException: pass
 		except MessageDoesNotContainName: pass
 		except UsernameAlreadyTaken: pass
 		except UserDidNotSendGameSettings: pass
-		except UserSentInvalidInstruction or UserSentWrongActionDuringHisTurn or UserSentInvalidMove or UserSentWrongActionDuringOpponentTurn: pass
+		except UserSentInvalidInstruction: pass
+		except UserSentWrongActionDuringHisTurn: pass
+		except UserSentInvalidMove: pass
+		except UserSentWrongActionDuringOpponentTurn: pass
 	
 	def getName(self, message):
 		# State 0: Waiting for user name
@@ -288,7 +293,7 @@ class User(Player, threading.Thread):
 
 			move = data["move"][0]
 
-			dict = { "state": 1, "move": move, "returnCode": data["returnCode"], "op_message": data["message"], "message": data["message"] }
+			dict = { "state": 1, "move": move, "returnCode": data["returnCode"], "op_message": "", "message": data["message"] }
 
 			# Fill with user move infos
 			if int(move) == 2:

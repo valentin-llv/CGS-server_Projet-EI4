@@ -8,8 +8,8 @@ extern int debug = 1;
 
 int main() {
     // cgs.valentin-lelievre.com
-    // int result = connectToCGS("192.168.1.122", 15001);
-    int result = connectToCGS("cgs.valentin-lelievre.com", 15001);
+    int result = connectToCGS("192.168.1.122", 15001);
+    // int result = connectToCGS("cgs.valentin-lelievre.com", 15001);
 
     if(!result) return 1;
 
@@ -78,7 +78,9 @@ int main() {
                     break;
                 }
 
-                whoPlays = 0;
+                if(moveData.action == DRAW_CARD || moveData.action == DRAW_OBJECTIVES) {
+                    // none
+                } else whoPlays = 0;
             } else {
                 printBoard();
 
