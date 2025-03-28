@@ -519,7 +519,9 @@ class TicketToRide(Game):
 		# replace it by one in the deck
 		try:
 			if self._deck.drawFaceUpCard(nC):
-				self.sendComment(self.players[self.whoPlays], "Choo choo, three locomotives... New face up cards !")
+				#TODO: implement the sendComment
+				# self.sendComment(self.players[self.whoPlays], "Choo choo, three locomotives... New face up cards !")
+				pass
 		except ValueError:
 			return (LOSING_MOVE if sum(self._cards[self.whoPlays]) >= sum(
 				self._cards[1 - self.whoPlays]) else WINNING_MOVE), "No more cards in the deck !!"

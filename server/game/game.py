@@ -164,6 +164,7 @@ class Game(threading.Thread):
         self.active = False
 
         # Remove player from game
+        # TODO: sometimes self.players is empty here... to check why
         self.players.remove(player)
 
         # If other players are bots, destroy them and close game
