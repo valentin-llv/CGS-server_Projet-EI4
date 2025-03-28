@@ -209,7 +209,7 @@ ResultCode sendGameSettings(GameSettings gameSettings, GameData* gameData) {
         return printError(__FUNCTION__, result, "Failed to unpack game settings");
 
     free(string);
-
+    free(tokens);
     // Return success
     return ALL_GOOD;
 }
@@ -544,9 +544,10 @@ ResultCode getServerResponse(char **string, jsmntok_t **tokens, int nbMaxTokens)
 
     // dealloc if tokens was passed as NULL
     if (nullTokens) {
+        free(*tokens);
         free(tokens);
     }
-    free(*tokens);
+
 
     // Return success
     return ALL_GOOD;
